@@ -1,54 +1,49 @@
 # Pricing Configuration
 
-## Monetization Model: Lifetime Purchase (Primary) + Subscription (Optional)
+## Monetization Model: Three-Tier Pricing
 
 ## Core Insight
 PathForge uses user-provided API keys, meaning **zero API cost for the developer**.
 The app is a pure local tool with SwiftData storage.
-Therefore, a **lifetime purchase model** is the most user-friendly and profitable approach.
+A **three-tier pricing model** gives users flexibility: try monthly, save with yearly, or commit with lifetime.
 
-## Product IDs (Non-Consumable IAP)
+## Pricing Structure
 
-### 1. Lifetime Purchase (Recommended)
-- **Reference Name**: PathForge Pro Lifetime
-- **Product ID**: `com.zzoutuo.PathForge.pro.lifetime`
-- **Price**: $9.99 (one-time)
-- **Display Name**: PathForge Pro
-- **Description**: Unlock all Pro features forever. One-time purchase, no subscriptions.
-- **Localization**: English (US)
-- **IAP Type**: Non-Consumable
+| Tier | Price | Description | Target User |
+|------|-------|-------------|-------------|
+| **Monthly** | $2.99/month | Entry-level, flexible | Users who want to try before committing |
+| **Yearly** | $14.99/year | Save 58% vs monthly | Users who see value after 1-2 months |
+| **Lifetime** | $29.99 (one-time) | Best value, permanent | Power users who want to lock in forever |
 
-### 2. Monthly Subscription (Optional)
+### Pricing Logic
+- **Monthly ($2.99)**: Low barrier to entry, serves as a paid trial
+- **Yearly ($14.99)**: Cheaper than 5 months of monthly ($2.99 × 5 = $14.95), incentivizes annual commitment
+- **Lifetime ($29.99)**: Cheaper than 2 years of yearly ($14.99 × 2 = $29.98), incentivizes long-term commitment
+
+**Break-even analysis**:
+- Monthly → Yearly: Breaks even at 5 months ($2.99 × 5 = $14.95 ≈ $14.99)
+- Yearly → Lifetime: Breaks even at 2 years ($14.99 × 2 = $29.98 ≈ $29.99)
+- Monthly → Lifetime: Breaks even at 10 months ($2.99 × 10 = $29.90 ≈ $29.99)
+
+## Product Configuration
+
+### PathForge Pro Monthly
 - **Reference Name**: PathForge Pro Monthly
 - **Product ID**: `com.zzoutuo.PathForge.pro.monthly`
-- **Price**: $2.99 per month
-- **Display Name**: Monthly Plan
-- **Description**: Full access to all Pro features. Cancel anytime.
-- **Localization**: English (US)
+- **Price**: $2.99/month
 - **IAP Type**: Auto-Renewable Subscription
 
-### 3. Yearly Subscription (Optional)
+### PathForge Pro Yearly
 - **Reference Name**: PathForge Pro Yearly
 - **Product ID**: `com.zzoutuo.PathForge.pro.yearly`
-- **Price**: $14.99 per year (~$1.25/month)
-- **Display Name**: Yearly Plan
-- **Description**: Best value subscription. Save 50% vs monthly.
-- **Localization**: English (US)
+- **Price**: $14.99/year
 - **IAP Type**: Auto-Renewable Subscription
 
-## Pricing Strategy Rationale
-
-| Plan | Price | Positioning |
-|------|-------|-------------|
-| Lifetime | $9.99 | **Recommended** - Best value, no recurring cost |
-| Monthly | $2.99/mo | Low barrier to try Pro features |
-| Yearly | $14.99/yr | For users who prefer subscriptions |
-
-**Why Lifetime at $9.99?**
-- ≈ 3.3 months of monthly subscription → users perceive it as a great deal
-- One-time payment eliminates churn and refund requests
-- Zero marginal cost per user → high profit margin at scale
-- Matches user expectation: "I bring my own API, I pay once for the tool"
+### PathForge Pro Lifetime
+- **Reference Name**: PathForge Pro Lifetime
+- **Product ID**: `com.zzoutuo.PathForge.pro.lifetime`
+- **Price**: $29.99 (one-time)
+- **IAP Type**: Non-Consumable
 
 ## Free Tier
 - Create 1 learning path (full functionality)
@@ -59,20 +54,15 @@ Therefore, a **lifetime purchase model** is the most user-friendly and profitabl
 - System notification reminders
 - Use your own API key (OpenAI, DeepSeek, Ollama, etc.)
 
-## Pro Features (Unlocked with purchase)
+**The free tier IS the trial.** No separate free trial is needed.
+
+## Pro Features (Unlocked with any purchase)
 - Unlimited learning paths
 - AI path adjustment (unlimited)
 - Detailed learning statistics (charts + trends)
 - Export learning reports (PDF)
 - Custom widget styles
 - Saved AI configuration profiles (unlimited)
-- Priority AI generation speed
-
-## Free Trial
-- **Duration**: 7 days
-- **Type**: Free trial on Yearly subscription only
-- **Default selection**: Lifetime (recommended)
-- Trial users get full Pro access during trial period
 
 ## Paywall UI Strategy
 
@@ -80,32 +70,36 @@ Therefore, a **lifetime purchase model** is the most user-friendly and profitabl
 ┌──────────────────────────────────────────────┐
 │          Unlock PathForge Pro                 │
 │                                               │
-│  ⭐ LIFETIME (Recommended)                    │
-│  $9.99 one-time                               │
-│  ✓ All Pro features forever                   │
-│  ✓ No subscriptions, no renewals              │
-│  [ Get Lifetime Access ]  ← Default selected  │
+│           👑                                  │
 │                                               │
-│  ──────────────────────────────────────       │
+│     Unlock Your Full Potential                │
+│     You bring the API key. We provide         │
+│     the tools.                                │
 │                                               │
-│  📅 MONTHLY                                   │
-│  $2.99/month                                  │
-│  [ Subscribe Monthly ]                        │
+│  ✓ Unlimited Learning Paths                   │
+│  ✓ AI Path Adjustment                         │
+│  ✓ Detailed Statistics                        │
+│  ✓ Export Reports (PDF)                       │
+│  ✓ Custom Widgets                             │
+│  ✓ Saved AI Profiles                          │
 │                                               │
-│  📅 YEARLY (Save 50%)                         │
-│  $14.99/year · 7-day free trial               │
-│  [ Start Free Trial ]                         │
+│  ┌────────────────────────────────────┐       │
+│  │  ○ Monthly    $2.99/month          │       │
+│  │  ○ Yearly     $14.99/year          │       │
+│  │  ● Lifetime   $29.99 (Best Value)  │       │
+│  └────────────────────────────────────┘       │
 │                                               │
-│  ──────────────────────────────────────       │
+│        [ Get Lifetime Access ]                │
+│                                               │
 │  Restore Purchases                            │
 │  Terms of Use · Privacy Policy                │
-└──────────────────────────────────────────────
+└──────────────────────────────────────────────┘
 ```
 
 ## Policy Pages Required
-- Support Page: ✅ (Must include subscription management info)
+- Support Page: ✅
 - Privacy Policy: ✅
-- Terms of Use: ✅ (REQUIRED for subscription apps)
+- Terms of Use: ✅
 
 ## Apple IAP Compliance Checklist
 
@@ -113,25 +107,23 @@ Therefore, a **lifetime purchase model** is the most user-friendly and profitabl
 - [ ] Product created in App Store Connect as Non-Consumable
 - [ ] Screenshot and description submitted for review
 - [ ] Restore purchases button implemented
+- [ ] Price displayed clearly on paywall
 
-### Subscription (Auto-Renewable)
-- [ ] Subscription group created in App Store Connect
-- [ ] Auto-renewal terms included in Terms of Use
-- [ ] Cancellation instructions included
-- [ ] Pricing clearly stated on paywall
-- [ ] Free trial terms included
-- [ ] Restore purchases functionality implemented
-- [ ] Subscription management link in Settings
+### Subscription Plans (Auto-Renewable)
+- [ ] Monthly and Yearly products created in App Store Connect
+- [ ] Subscription group configured
+- [ ] Free trial (optional) configured for yearly
+- [ ] Restore purchases button implemented
 
 ## Technical Implementation Notes
 
-### SubscriptionManager Updates Needed
-1. Add `isLifetimeUser` property (checks Non-Consumable IAP)
-2. `isProUser` = `isLifetimeUser || isSubscriptionActive`
-3. Paywall shows 3 options with Lifetime as default
-4. Purchase flow handles both Non-Consumable and Auto-Renewable types
+### SubscriptionManager
+1. Load all three products: monthly, yearly, lifetime
+2. `isProUser` = purchased Lifetime OR active subscription
+3. `isLifetimeUser` = purchased Non-Consumable IAP
+4. Track subscription expiration for yearly/monthly
 
 ### UserDefaults Keys
 - `has_lifetime_purchase` (Bool) - set when Non-Consumable IAP completes
-- `subscription_expiry_date` (Date) - for subscription users
-- Existing `free_paths_created` remains for free tier tracking
+- `saved_ai_profiles` - for saved AI configurations
+- `free_paths_created` - for free tier tracking

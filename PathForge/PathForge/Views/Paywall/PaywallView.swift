@@ -32,7 +32,7 @@ struct PaywallView: View {
 
         var priceText: String {
             switch self {
-            case .lifetime: return "$9.99"
+            case .lifetime: return "$29.99"
             case .monthly: return "$2.99/mo"
             case .yearly: return "$14.99/yr"
             }
@@ -42,18 +42,18 @@ struct PaywallView: View {
             switch self {
             case .lifetime: return "BEST VALUE"
             case .monthly: return nil
-            case .yearly: return "SAVE 50%"
+            case .yearly: return "SAVE 58%"
             }
         }
 
         var features: [String] {
             switch self {
             case .lifetime:
-                return ["All Pro features forever", "No subscriptions, no renewals", "Use on all your devices"]
+                return ["All Pro features forever", "No subscriptions, no renewals", "Use on all your devices", "Pay once, save forever"]
             case .monthly:
                 return ["All Pro features", "Cancel anytime", "No long-term commitment"]
             case .yearly:
-                return ["All Pro features", "7-day free trial", "Save 50% vs monthly"]
+                return ["All Pro features", "Save 58% vs monthly", "Only $1.25/month"]
             }
         }
 
@@ -61,7 +61,7 @@ struct PaywallView: View {
             switch self {
             case .lifetime: return "Get Lifetime Access"
             case .monthly: return "Subscribe Monthly"
-            case .yearly: return "Start Free Trial"
+            case .yearly: return "Subscribe Yearly"
             }
         }
     }
