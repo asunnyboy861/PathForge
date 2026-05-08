@@ -27,10 +27,6 @@ struct SettingsView: View {
             Form {
                 apiSection
 
-                if viewModel.showAdvancedSettings && !viewModel.savedProfiles.isEmpty {
-                    savedProfilesSection
-                }
-
                 subscriptionSection
 
                 notificationsSection
@@ -61,67 +57,206 @@ struct SettingsView: View {
         }
     }
 
-    private var savedProfilesSection: some View {
+    private var apiSection: some View {
         Section {
-            ForEach(viewModel.savedProfiles) { profile in
-                Button {
-                    viewModel.activateProfile(profile)
-                } label: {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack {
-                                Text(profile.name)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                if viewModel.activeProfileId == profile.id {
-                                    Text("Active")
-                                        .font(.caption2)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color.pathGreen.opacity(0.2))
-                                        .foregroundStyle(.pathGreen)
-                                        .clipShape(Capsule())
+            SecureField("API Key", text: $viewModel.apiKey)
+                .autocorrectionDisabled()
+                .autocapitalization(.none)
+
+            if viewModel.apiKey.isEmpty {
+                Text("Required for AI path generation. Get your key at platform.openai.com")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Label("API Key configured", systemImage: "checkmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.pathGreen)
+            }
+
+            Toggle("Advanced Settings", isOn: $viewModel.showAdvancedSettings)
+
+            if viewModel.showAdvancedSettings {
+                TextField("Base URL", text: $viewModel.baseURL, prompt: Text("Enter your API endpoint URL"))
+                    .autocorrectionDisabled()
+                    .autocapitalization(.none)
+
+                Text("Default: \(AIConfiguration.default.baseURL)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                TextField("Model ID", text: $viewModel.modelID, prompt: Text("e.g., gpt-4o, claude-3-5-sonnet"))
+                    .autocorrectionDisabled()
+                    .autocapitalization(.none)
+
+                Text("Default: \(AIConfiguration.default.modelID)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                testConnectionArea
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Quick Presets")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(AIConfiguration.presets) { preset in
+                                Button {
+                                    viewModel.applyPreset(preset)
+                                } label: {
+                                    Text(preset.name)
+                                        .font(.subheadline)
                                 }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .tint(viewModel.isPresetSelected(preset) ? .forgeBlue : .secondary)
                             }
-                            Text("\(profile.providerDisplayName) · \(profile.modelID)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(profile.maskedApiKey)
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                        if let lastUsed = profile.lastUsedAt {
-                            Text(lastUsed, style: .relative)
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
                         }
                     }
-                    .padding(.vertical, 4)
-                }
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    Button(role: .destructive) {
-                        viewModel.profileToDelete = profile
-                        viewModel.showDeleteConfirmation = true
-                    } label: {
-                        Label("Delete", systemImage: "trash")
+
+                    Button("Reset to Defaults") {
+                        viewModel.resetToDefaults()
                     }
+                    .font(.caption)
+                    .foregroundStyle(.red)
                 }
             }
 
-            Button {
-                viewModel.newProfileName = ""
-                viewModel.showProfileSheet = true
-            } label: {
-                Label("Save Current Configuration", systemImage: "plus.circle")
-                    .font(.subheadline)
+            if !viewModel.savedProfiles.isEmpty {
+                savedProfilesCard
             }
-            .disabled(viewModel.apiKey.isEmpty || viewModel.baseURL.isEmpty || viewModel.modelID.isEmpty)
         } header: {
-            Text("Saved Profiles")
-        } footer: {
-            Text("Tap a profile to switch to it. Swipe left to delete.")
+            Text("AI Configuration")
         }
+    }
+
+    private var testConnectionArea: some View {
+        VStack(spacing: 8) {
+            Button {
+                Task { await viewModel.testConnection() }
+            } label: {
+                HStack {
+                    if viewModel.isTestingConnection {
+                        ProgressView()
+                            .tint(.primary)
+                    } else {
+                        Image(systemName: "antenna.radiowaves.left.and.right")
+                    }
+                    Text("Test Connection")
+                        .font(.subheadline)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(viewModel.isTestingConnection || viewModel.apiKey.isEmpty || viewModel.baseURL.isEmpty || viewModel.modelID.isEmpty)
+
+            if let result = viewModel.connectionTestResult {
+                switch result {
+                case .success:
+                    VStack(spacing: 8) {
+                        Label("Connection successful", systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.pathGreen)
+
+                        Button {
+                            viewModel.newProfileName = ""
+                            viewModel.showProfileSheet = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "square.and.arrow.down")
+                                Text("Save as Profile")
+                            }
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .tint(.pathGreen)
+                    }
+                case .failure(let message):
+                    Label(message, systemImage: "xmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
+        }
+    }
+
+    private var savedProfilesCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Saved Profiles")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(viewModel.savedProfiles) { profile in
+                        Button {
+                            viewModel.activateProfile(profile)
+                        } label: {
+                            profileCard(profile)
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                viewModel.profileToDelete = profile
+                                viewModel.showDeleteConfirmation = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func profileCard(_ profile: SavedAIProfile) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(profile.name)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .lineLimit(1)
+                Spacer()
+                if viewModel.activeProfileId == profile.id {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.pathGreen)
+                }
+            }
+
+            Text(profile.providerDisplayName)
+                .font(.caption2)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.forgeBlue.opacity(0.15))
+                .foregroundStyle(.forgeBlue)
+                .clipShape(Capsule())
+
+            Text(profile.modelID)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+            Text(profile.maskedApiKey)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(10)
+        .frame(width: 140)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(viewModel.activeProfileId == profile.id ? Color.pathGreen.opacity(0.08) : Color(.systemGray6))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(viewModel.activeProfileId == profile.id ? Color.pathGreen.opacity(0.5) : Color.secondary.opacity(0.2), lineWidth: 1)
+        )
     }
 
     private var saveProfileSheet: some View {
@@ -178,110 +313,6 @@ struct SettingsView: View {
                     .disabled(viewModel.newProfileName.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
-        }
-    }
-
-    private var apiSection: some View {
-        Section {
-            SecureField("API Key", text: $viewModel.apiKey)
-                .autocorrectionDisabled()
-                .autocapitalization(.none)
-
-            if viewModel.apiKey.isEmpty {
-                Text("Required for AI path generation. Get your key at platform.openai.com")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                Label("API Key configured", systemImage: "checkmark.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.pathGreen)
-            }
-
-            Toggle("Advanced Settings", isOn: $viewModel.showAdvancedSettings)
-
-            if viewModel.showAdvancedSettings {
-                TextField("Base URL", text: $viewModel.baseURL, prompt: Text("Enter your API endpoint URL"))
-                    .autocorrectionDisabled()
-                    .autocapitalization(.none)
-
-                Text("Default: \(AIConfiguration.default.baseURL)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                TextField("Model ID", text: $viewModel.modelID, prompt: Text("e.g., gpt-4o, claude-3-5-sonnet"))
-                    .autocorrectionDisabled()
-                    .autocapitalization(.none)
-
-                Text("Default: \(AIConfiguration.default.modelID)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                if viewModel.hasUnsavedChanges {
-                    Label("Changes saved automatically", systemImage: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.pathGreen)
-                }
-
-                Button {
-                    Task { await viewModel.testConnection() }
-                } label: {
-                    HStack {
-                        if viewModel.isTestingConnection {
-                            ProgressView()
-                                .tint(.primary)
-                        }
-                        Text("Test Connection")
-                            .font(.subheadline)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .disabled(viewModel.isTestingConnection || viewModel.apiKey.isEmpty || viewModel.baseURL.isEmpty || viewModel.modelID.isEmpty)
-
-                if let result = viewModel.connectionTestResult {
-                    switch result {
-                    case .success:
-                        Label("Connection successful", systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.pathGreen)
-                    case .failure(let message):
-                        Label(message, systemImage: "xmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.red)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Quick Presets")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(AIConfiguration.presets) { preset in
-                                Button {
-                                    viewModel.applyPreset(preset)
-                                } label: {
-                                    Text(preset.name)
-                                        .font(.subheadline)
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                                .tint(viewModel.isPresetSelected(preset) ? .forgeBlue : .secondary)
-                            }
-                        }
-                    }
-
-                    Button("Reset to Defaults") {
-                        viewModel.resetToDefaults()
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                }
-            }
-        } header: {
-            Text("AI Configuration")
         }
     }
 

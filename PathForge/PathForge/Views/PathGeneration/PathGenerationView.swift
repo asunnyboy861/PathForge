@@ -8,6 +8,8 @@ struct PathGenerationView: View {
     @State private var subscriptionManager = SubscriptionManager()
     @State private var showPaywall = false
     @State private var showAPIKeyAlert = false
+    @State private var savedProfiles: [SavedAIProfile] = AIProfileManager.shared.loadProfiles()
+    @State private var selectedProfileId: String? = AIProfileManager.shared.getActiveProfileId()
 
     init() {
         let config = AIConfiguration.loadFromStorage()
@@ -35,7 +37,7 @@ struct PathGenerationView: View {
                     LevelAssessmentStep(viewModel: viewModel)
                         .tag(PathGenerationViewModel.GenerationStep.levelAssessment)
 
-                    TimePreferencesStep(viewModel: viewModel)
+                    TimePreferencesStep(viewModel: viewModel, savedProfiles: savedProfiles, selectedProfileId: $selectedProfileId)
                         .tag(PathGenerationViewModel.GenerationStep.timePreferences)
 
                     GeneratingStep(viewModel: viewModel)
@@ -92,7 +94,13 @@ struct PathGenerationView: View {
             }
             .onChange(of: viewModel.currentStep) { oldValue, newValue in
                 if newValue == .generating {
-                    let config = AIConfiguration.loadFromStorage()
+                    let config: AIConfiguration
+                    if let profileId = selectedProfileId,
+                       let profile = savedProfiles.first(where: { $0.id == profileId }) {
+                        config = AIConfiguration(apiKey: profile.apiKey, baseURL: profile.baseURL, modelID: profile.modelID)
+                    } else {
+                        config = AIConfiguration.loadFromStorage()
+                    }
                     let service = PathGenerationService(openAIService: OpenAIService(configuration: config))
                     viewModel.pathService = service
                 }
@@ -262,6 +270,8 @@ struct LevelAssessmentStep: View {
 
 struct TimePreferencesStep: View {
     @Bindable var viewModel: PathGenerationViewModel
+    var savedProfiles: [SavedAIProfile]
+    @Binding var selectedProfileId: String?
 
     var body: some View {
         ScrollView {
@@ -274,6 +284,10 @@ struct TimePreferencesStep: View {
                     Text("Time & Style")
                         .font(.title2)
                         .fontWeight(.bold)
+                }
+
+                if !savedProfiles.isEmpty {
+                    modelPickerSection
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -332,6 +346,52 @@ struct TimePreferencesStep: View {
         }
         .frame(maxWidth: 720)
         .frame(maxWidth: .infinity)
+    }
+
+    private var modelPickerSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("AI Model")
+                .font(.headline)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(savedProfiles) { profile in
+                        Button {
+                            selectedProfileId = profile.id
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(profile.name)
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .lineLimit(1)
+                                    if selectedProfileId == profile.id {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.caption2)
+                                            .foregroundStyle(.pathGreen)
+                                    }
+                                }
+                                Text(profile.modelID)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                            .padding(8)
+                            .frame(minWidth: 100)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(selectedProfileId == profile.id ? Color.pathGreen.opacity(0.1) : Color(.systemGray6))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(selectedProfileId == profile.id ? Color.pathGreen.opacity(0.5) : Color.secondary.opacity(0.2), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
     }
 }
 
