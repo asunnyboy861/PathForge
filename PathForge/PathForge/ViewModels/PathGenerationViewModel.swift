@@ -34,11 +34,15 @@ final class PathGenerationViewModel {
     let popularGoals = ["Python", "React", "Swift", "Data Science", "UI/UX Design", "Photography",
                         "Public Speaking", "Machine Learning", "Guitar", "Spanish"]
 
-    private let pathService: PathGenerationService
+    private var _pathService: PathGenerationService
+    var pathService: PathGenerationService {
+        get { _pathService }
+        set { _pathService = newValue }
+    }
     private var modelContext: ModelContext?
 
     init(pathService: PathGenerationService) {
-        self.pathService = pathService
+        self._pathService = pathService
     }
 
     func configure(modelContext: ModelContext) {

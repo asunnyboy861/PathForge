@@ -6,22 +6,33 @@ final class SettingsViewModel {
     var apiKey = UserDefaults.standard.string(forKey: AIConfigurationStorageKey.apiKey) ?? "" {
         didSet {
             UserDefaults.standard.set(apiKey, forKey: AIConfigurationStorageKey.apiKey)
+            hasUnsavedChanges = true
         }
     }
 
     var baseURL = UserDefaults.standard.string(forKey: AIConfigurationStorageKey.baseURL) ?? AIConfiguration.default.baseURL {
         didSet {
             UserDefaults.standard.set(baseURL, forKey: AIConfigurationStorageKey.baseURL)
+            hasUnsavedChanges = true
         }
     }
 
     var modelID = UserDefaults.standard.string(forKey: AIConfigurationStorageKey.modelID) ?? AIConfiguration.default.modelID {
         didSet {
             UserDefaults.standard.set(modelID, forKey: AIConfigurationStorageKey.modelID)
+            hasUnsavedChanges = true
         }
     }
 
     var showAdvancedSettings = false
+    var hasUnsavedChanges = false
+    var isTestingConnection = false
+    var connectionTestResult: ConnectionTestResult?
+
+    enum ConnectionTestResult {
+        case success
+        case failure(String)
+    }
 
     var aiConfiguration: AIConfiguration {
         AIConfiguration(apiKey: apiKey, baseURL: baseURL, modelID: modelID)
@@ -42,6 +53,27 @@ final class SettingsViewModel {
             return baseURL.isEmpty && modelID.isEmpty
         }
         return baseURL == preset.baseURL && modelID == preset.modelID
+    }
+
+    func testConnection() async {
+        isTestingConnection = true
+        connectionTestResult = nil
+
+        let config = AIConfiguration(apiKey: apiKey, baseURL: baseURL, modelID: modelID)
+        let service = OpenAIService(configuration: config)
+
+        do {
+            let response = try await service.testConnection()
+            if response.contains("OK") {
+                connectionTestResult = .success
+            } else {
+                connectionTestResult = .failure("Unexpected response: \(response)")
+            }
+        } catch {
+            connectionTestResult = .failure(error.localizedDescription)
+        }
+
+        isTestingConnection = false
     }
 
     func resetToDefaults() {

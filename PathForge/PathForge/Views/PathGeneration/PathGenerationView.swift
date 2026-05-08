@@ -38,7 +38,7 @@ struct PathGenerationView: View {
                     TimePreferencesStep(viewModel: viewModel)
                         .tag(PathGenerationViewModel.GenerationStep.timePreferences)
 
-                    GeneratingStep()
+                    GeneratingStep(viewModel: viewModel)
                         .tag(PathGenerationViewModel.GenerationStep.generating)
 
                     if let path = viewModel.generatedPath {
@@ -88,6 +88,13 @@ struct PathGenerationView: View {
                 let config = AIConfiguration.loadFromStorage()
                 if config.apiKey.isEmpty {
                     showAPIKeyAlert = true
+                }
+            }
+            .onChange(of: viewModel.currentStep) { oldValue, newValue in
+                if newValue == .generating {
+                    let config = AIConfiguration.loadFromStorage()
+                    let service = PathGenerationService(openAIService: OpenAIService(configuration: config))
+                    viewModel.pathService = service
                 }
             }
         }
@@ -329,6 +336,8 @@ struct TimePreferencesStep: View {
 }
 
 struct GeneratingStep: View {
+    let viewModel: PathGenerationViewModel
+
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -346,6 +355,32 @@ struct GeneratingStep: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
+
+            if let error = viewModel.errorMessage {
+                VStack(spacing: 12) {
+                    Divider()
+
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+
+                    Button("Go to Settings") {
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let rootVC = windowScene.windows.first?.rootViewController {
+                            var currentVC = rootVC
+                            while let presented = currentVC.presentedViewController {
+                                currentVC = presented
+                            }
+                            currentVC.dismiss(animated: true)
+                        }
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.forgeBlue)
+                }
+                .padding(.top, 8)
+            }
 
             Spacer()
         }

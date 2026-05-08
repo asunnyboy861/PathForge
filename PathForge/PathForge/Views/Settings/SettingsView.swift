@@ -76,6 +76,42 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
+                if viewModel.hasUnsavedChanges {
+                    Label("Changes saved automatically", systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.pathGreen)
+                }
+
+                Button {
+                    Task { await viewModel.testConnection() }
+                } label: {
+                    HStack {
+                        if viewModel.isTestingConnection {
+                            ProgressView()
+                                .tint(.primary)
+                        }
+                        Text("Test Connection")
+                            .font(.subheadline)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(viewModel.isTestingConnection || viewModel.apiKey.isEmpty || viewModel.baseURL.isEmpty || viewModel.modelID.isEmpty)
+
+                if let result = viewModel.connectionTestResult {
+                    switch result {
+                    case .success:
+                        Label("Connection successful", systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.pathGreen)
+                    case .failure(let message):
+                        Label(message, systemImage: "xmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Quick Presets")
                         .font(.subheadline)
