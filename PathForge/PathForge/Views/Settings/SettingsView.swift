@@ -60,7 +60,7 @@ struct SettingsView: View {
             Toggle("Advanced Settings", isOn: $viewModel.showAdvancedSettings)
 
             if viewModel.showAdvancedSettings {
-                TextField("Base URL", text: $viewModel.baseURL)
+                TextField("Base URL", text: $viewModel.baseURL, prompt: Text("Enter your API endpoint URL"))
                     .autocorrectionDisabled()
                     .autocapitalization(.none)
 
@@ -68,7 +68,7 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                TextField("Model ID", text: $viewModel.modelID)
+                TextField("Model ID", text: $viewModel.modelID, prompt: Text("e.g., gpt-4o, claude-3-5-sonnet"))
                     .autocorrectionDisabled()
                     .autocapitalization(.none)
 
@@ -92,7 +92,7 @@ struct SettingsView: View {
                                 }
                                 .buttonStyle(.bordered)
                                 .controlSize(.small)
-                                .tint(viewModel.baseURL == preset.baseURL && viewModel.modelID == preset.modelID ? .forgeBlue : .secondary)
+                                .tint(viewModel.isPresetSelected(preset) ? .forgeBlue : .secondary)
                             }
                         }
                     }

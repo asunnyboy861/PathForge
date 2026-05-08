@@ -28,10 +28,20 @@ final class SettingsViewModel {
     }
 
     func applyPreset(_ preset: AIPreset) {
-        if !preset.isCustom {
+        if preset.isCustom {
+            baseURL = ""
+            modelID = ""
+        } else {
             baseURL = preset.baseURL
             modelID = preset.modelID
         }
+    }
+
+    func isPresetSelected(_ preset: AIPreset) -> Bool {
+        if preset.isCustom {
+            return baseURL.isEmpty && modelID.isEmpty
+        }
+        return baseURL == preset.baseURL && modelID == preset.modelID
     }
 
     func resetToDefaults() {
