@@ -1,14 +1,69 @@
 import SwiftUI
+import StoreKit
 
 struct PaywallView: View {
     let subscriptionManager: SubscriptionManager
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedPlan: Plan = .yearly
+    @State private var selectedPlan: Plan = .lifetime
     @State private var isPurchasing = false
 
-    enum Plan {
+    enum Plan: CaseIterable, Identifiable {
+        case lifetime
         case monthly
         case yearly
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .lifetime: return "Lifetime"
+            case .monthly: return "Monthly"
+            case .yearly: return "Yearly"
+            }
+        }
+
+        var subtitle: String {
+            switch self {
+            case .lifetime: return "One-time purchase"
+            case .monthly: return "Billed monthly"
+            case .yearly: return "Billed annually"
+            }
+        }
+
+        var priceText: String {
+            switch self {
+            case .lifetime: return "$9.99"
+            case .monthly: return "$2.99/mo"
+            case .yearly: return "$14.99/yr"
+            }
+        }
+
+        var badge: String? {
+            switch self {
+            case .lifetime: return "BEST VALUE"
+            case .monthly: return nil
+            case .yearly: return "SAVE 50%"
+            }
+        }
+
+        var features: [String] {
+            switch self {
+            case .lifetime:
+                return ["All Pro features forever", "No subscriptions, no renewals", "Use on all your devices"]
+            case .monthly:
+                return ["All Pro features", "Cancel anytime", "No long-term commitment"]
+            case .yearly:
+                return ["All Pro features", "7-day free trial", "Save 50% vs monthly"]
+            }
+        }
+
+        var buttonTitle: String {
+            switch self {
+            case .lifetime: return "Get Lifetime Access"
+            case .monthly: return "Subscribe Monthly"
+            case .yearly: return "Start Free Trial"
+            }
+        }
     }
 
     var body: some View {
@@ -21,11 +76,13 @@ struct PaywallView: View {
 
                     planSelector
 
-                    trialInfo
+                    selectedPlanDetails
 
                     purchaseButton
 
                     restoreButton
+
+                    legalLinks
                 }
                 .padding()
             }
@@ -52,7 +109,7 @@ struct PaywallView: View {
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
 
-            Text("Get unlimited paths, AI adjustments, and detailed statistics")
+            Text("You bring the API key. We provide the tools.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -67,83 +124,91 @@ struct PaywallView: View {
             FeatureRow(icon: "chart.bar", title: "Detailed Statistics", description: "Charts, trends, and insights")
             FeatureRow(icon: "square.and.arrow.up", title: "Export Reports", description: "Share your progress as PDF")
             FeatureRow(icon: "paintbrush", title: "Custom Widgets", description: "Personalize your home screen")
+            FeatureRow(icon: "folder", title: "Saved AI Profiles", description: "Manage multiple API configurations")
         }
     }
 
     private var planSelector: some View {
         VStack(spacing: 12) {
-            Button {
-                selectedPlan = .yearly
-            } label: {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text("Yearly")
-                                .font(.headline)
-                            Text("SAVE 50%")
-                                .font(.caption2)
-                                .fontWeight(.bold)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(.pathGreen, in: Capsule())
-                                .foregroundStyle(.white)
-                        }
-                        Text("$29.99/year ($2.50/month)")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: selectedPlan == .yearly ? "largecircle.fill.circle" : "circle")
-                        .foregroundStyle(selectedPlan == .yearly ? .forgeBlue : .secondary)
+            ForEach(Plan.allCases) { plan in
+                Button {
+                    selectedPlan = plan
+                } label: {
+                    planRow(plan)
                 }
-                .padding()
-                .background(selectedPlan == .yearly ? Color.forgeBlue.opacity(0.1) : Color.clear)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(selectedPlan == .yearly ? Color.forgeBlue : Color.secondary.opacity(0.3), lineWidth: selectedPlan == .yearly ? 2 : 1)
-                )
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-
-            Button {
-                selectedPlan = .monthly
-            } label: {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Monthly")
-                            .font(.headline)
-                        Text("$4.99/month")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: selectedPlan == .monthly ? "largecircle.fill.circle" : "circle")
-                        .foregroundStyle(selectedPlan == .monthly ? .forgeBlue : .secondary)
-                }
-                .padding()
-                .background(selectedPlan == .monthly ? Color.forgeBlue.opacity(0.1) : Color.clear)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(selectedPlan == .monthly ? Color.forgeBlue : Color.secondary.opacity(0.3), lineWidth: selectedPlan == .monthly ? 2 : 1)
-                )
-            }
-            .buttonStyle(.plain)
         }
     }
 
-    private var trialInfo: some View {
-        Text("7-day free trial. Cancel anytime.")
-            .font(.caption)
-            .foregroundStyle(.secondary)
+    private func planRow(_ plan: Plan) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(plan.title)
+                        .font(.headline)
+                    if let badge = plan.badge {
+                        Text(badge)
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(plan == .lifetime ? .pathGreen : .forgeBlue, in: Capsule())
+                            .foregroundStyle(.white)
+                    }
+                }
+                Text(plan.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text(plan.priceText)
+                .font(.headline)
+            Image(systemName: selectedPlan == plan ? "largecircle.fill.circle" : "circle")
+                .foregroundStyle(selectedPlan == plan ? .forgeBlue : .secondary)
+        }
+        .padding()
+        .background(selectedPlan == plan ? Color.forgeBlue.opacity(0.1) : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(selectedPlan == plan ? Color.forgeBlue : Color.secondary.opacity(0.3), lineWidth: selectedPlan == plan ? 2 : 1)
+        )
+    }
+
+    private var selectedPlanDetails: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("What's included:")
+                .font(.subheadline)
+                .fontWeight(.medium)
+
+            ForEach(selectedPlan.features, id: \.self) { feature in
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.pathGreen)
+                    Text(feature)
+                        .font(.subheadline)
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var purchaseButton: some View {
         Button {
             Task {
                 isPurchasing = true
-                let product = selectedPlan == .yearly ? subscriptionManager.yearlyProduct : subscriptionManager.monthlyProduct
+                let product: Product?
+                switch selectedPlan {
+                case .lifetime:
+                    product = subscriptionManager.lifetimeProduct
+                case .monthly:
+                    product = subscriptionManager.monthlyProduct
+                case .yearly:
+                    product = subscriptionManager.yearlyProduct
+                }
                 if let product {
                     let success = await subscriptionManager.purchase(product)
                     if success {
@@ -158,7 +223,7 @@ struct PaywallView: View {
                     ProgressView()
                         .tint(.white)
                 }
-                Text("Start Free Trial")
+                Text(selectedPlan.buttonTitle)
             }
             .font(.headline)
             .foregroundStyle(.white)
@@ -178,6 +243,16 @@ struct PaywallView: View {
         }
         .font(.subheadline)
         .foregroundStyle(.forgeBlue)
+    }
+
+    private var legalLinks: some View {
+        HStack(spacing: 16) {
+            Link("Terms", destination: URL(string: "https://asunnyboy861.github.io/PathForge/terms.html")!)
+            Text("·")
+            Link("Privacy", destination: URL(string: "https://asunnyboy861.github.io/PathForge/privacy.html")!)
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
 }
 

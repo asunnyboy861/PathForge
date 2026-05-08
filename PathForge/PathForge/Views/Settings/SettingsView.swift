@@ -294,9 +294,19 @@ struct SettingsView: View {
                     Text("PathForge Pro")
                         .foregroundStyle(.primary)
                     Spacer()
-                    Text("Active")
-                        .font(.caption)
-                        .foregroundStyle(.pathGreen)
+                    if subscriptionManager.isLifetimeUser {
+                        Text("Lifetime")
+                            .font(.caption)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.pathGreen.opacity(0.2))
+                            .foregroundStyle(.pathGreen)
+                            .clipShape(Capsule())
+                    } else {
+                        Text("Active")
+                            .font(.caption)
+                            .foregroundStyle(.pathGreen)
+                    }
                 }
             } else {
                 Button {
