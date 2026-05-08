@@ -28,6 +28,12 @@ final class SettingsViewModel {
     var hasUnsavedChanges = false
     var isTestingConnection = false
     var connectionTestResult: ConnectionTestResult?
+    var savedProfiles: [SavedAIProfile] = []
+    var showProfileSheet = false
+    var editingProfile: SavedAIProfile?
+    var newProfileName = ""
+    var showDeleteConfirmation = false
+    var profileToDelete: SavedAIProfile?
 
     enum ConnectionTestResult {
         case success
@@ -36,6 +42,45 @@ final class SettingsViewModel {
 
     var aiConfiguration: AIConfiguration {
         AIConfiguration(apiKey: apiKey, baseURL: baseURL, modelID: modelID)
+    }
+
+    var activeProfileId: String? {
+        AIProfileManager.shared.getActiveProfileId()
+    }
+
+    func loadSavedProfiles() {
+        savedProfiles = AIProfileManager.shared.loadProfiles()
+    }
+
+    func saveCurrentAsProfile(name: String) {
+        let profile = SavedAIProfile(
+            name: name,
+            apiKey: apiKey,
+            baseURL: baseURL,
+            modelID: modelID
+        )
+        AIProfileManager.shared.addProfile(profile)
+        AIProfileManager.shared.setActiveProfileId(profile.id)
+        loadSavedProfiles()
+    }
+
+    func activateProfile(_ profile: SavedAIProfile) {
+        apiKey = profile.apiKey
+        baseURL = profile.baseURL
+        modelID = profile.modelID
+        AIProfileManager.shared.setActiveProfileId(profile.id)
+
+        var profiles = savedProfiles
+        if let index = profiles.firstIndex(where: { $0.id == profile.id }) {
+            profiles[index].lastUsedAt = Date()
+            AIProfileManager.shared.saveProfiles(profiles)
+            savedProfiles = profiles
+        }
+    }
+
+    func deleteProfile(_ profile: SavedAIProfile) {
+        AIProfileManager.shared.deleteProfile(withId: profile.id)
+        loadSavedProfiles()
     }
 
     func applyPreset(_ preset: AIPreset) {

@@ -27,6 +27,10 @@ struct SettingsView: View {
             Form {
                 apiSection
 
+                if viewModel.showAdvancedSettings && !viewModel.savedProfiles.isEmpty {
+                    savedProfilesSection
+                }
+
                 subscriptionSection
 
                 notificationsSection
@@ -38,6 +42,142 @@ struct SettingsView: View {
             .frame(maxWidth: 720)
             .frame(maxWidth: .infinity)
             .navigationTitle("Settings")
+            .onAppear {
+                viewModel.loadSavedProfiles()
+            }
+            .sheet(isPresented: $viewModel.showProfileSheet) {
+                saveProfileSheet
+            }
+            .alert("Delete Profile", isPresented: $viewModel.showDeleteConfirmation) {
+                Button("Delete", role: .destructive) {
+                    if let profile = viewModel.profileToDelete {
+                        viewModel.deleteProfile(profile)
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Are you sure you want to delete this profile? This cannot be undone.")
+            }
+        }
+    }
+
+    private var savedProfilesSection: some View {
+        Section {
+            ForEach(viewModel.savedProfiles) { profile in
+                Button {
+                    viewModel.activateProfile(profile)
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Text(profile.name)
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                if viewModel.activeProfileId == profile.id {
+                                    Text("Active")
+                                        .font(.caption2)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.pathGreen.opacity(0.2))
+                                        .foregroundStyle(.pathGreen)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                            Text("\(profile.providerDisplayName) · \(profile.modelID)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(profile.maskedApiKey)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                        Spacer()
+                        if let lastUsed = profile.lastUsedAt {
+                            Text(lastUsed, style: .relative)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) {
+                        viewModel.profileToDelete = profile
+                        viewModel.showDeleteConfirmation = true
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+            }
+
+            Button {
+                viewModel.newProfileName = ""
+                viewModel.showProfileSheet = true
+            } label: {
+                Label("Save Current Configuration", systemImage: "plus.circle")
+                    .font(.subheadline)
+            }
+            .disabled(viewModel.apiKey.isEmpty || viewModel.baseURL.isEmpty || viewModel.modelID.isEmpty)
+        } header: {
+            Text("Saved Profiles")
+        } footer: {
+            Text("Tap a profile to switch to it. Swipe left to delete.")
+        }
+    }
+
+    private var saveProfileSheet: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Profile Name", text: $viewModel.newProfileName)
+                        .autocorrectionDisabled()
+                } header: {
+                    Text("Save Configuration")
+                } footer: {
+                    Text("This will save your current API Key, Base URL, and Model ID as a reusable profile.")
+                }
+
+                Section {
+                    HStack {
+                        Text("API Key")
+                        Spacer()
+                        Text(viewModel.apiKey.isEmpty ? "Not set" : viewModel.apiKey.prefix(4) + "••••")
+                            .foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        Text("Base URL")
+                        Spacer()
+                        Text(viewModel.baseURL.isEmpty ? "Not set" : viewModel.baseURL)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    HStack {
+                        Text("Model ID")
+                        Spacer()
+                        Text(viewModel.modelID.isEmpty ? "Not set" : viewModel.modelID)
+                            .foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Current Values")
+                }
+            }
+            .navigationTitle("Save Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") {
+                        viewModel.showProfileSheet = false
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save") {
+                        if !viewModel.newProfileName.trimmingCharacters(in: .whitespaces).isEmpty {
+                            viewModel.saveCurrentAsProfile(name: viewModel.newProfileName.trimmingCharacters(in: .whitespaces))
+                            viewModel.showProfileSheet = false
+                        }
+                    }
+                    .disabled(viewModel.newProfileName.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
         }
     }
 

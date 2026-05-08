@@ -57,6 +57,14 @@ enum AIConfigurationStorageKey {
 
 extension AIConfiguration {
     static func loadFromStorage() -> AIConfiguration {
+        if let activeProfile = AIProfileManager.shared.getActiveProfile() {
+            return AIConfiguration(
+                apiKey: activeProfile.apiKey,
+                baseURL: activeProfile.baseURL,
+                modelID: activeProfile.modelID
+            )
+        }
+
         var config = AIConfiguration.default
         config.apiKey = UserDefaults.standard.string(forKey: AIConfigurationStorageKey.apiKey) ?? ""
         config.baseURL = UserDefaults.standard.string(forKey: AIConfigurationStorageKey.baseURL) ?? AIConfiguration.default.baseURL
