@@ -8,6 +8,7 @@ final class ScreenshotTests: XCTestCase {
         app.launch()
 
         let screenshotDir = "/tmp/PathForge_screenshots"
+        try FileManager.default.createDirectory(atPath: screenshotDir, withIntermediateDirectories: true)
 
         let homeScreenshot = app.screenshot()
         let homeURL = URL(fileURLWithPath: "\(screenshotDir)/01_home.png")

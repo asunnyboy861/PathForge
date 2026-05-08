@@ -1,12 +1,10 @@
 import Foundation
 
 final class OpenAIService {
-    private let apiKey: String
-    private let baseURL = "https://api.openai.com/v1/chat/completions"
-    private let model = "gpt-4o-mini"
+    private let configuration: AIConfiguration
 
-    init(apiKey: String) {
-        self.apiKey = apiKey
+    init(configuration: AIConfiguration) {
+        self.configuration = configuration
     }
 
     struct CompletionResponse: Codable {
@@ -20,13 +18,18 @@ final class OpenAIService {
     }
 
     func complete(prompt: String) async throws -> String {
-        var request = URLRequest(url: URL(string: baseURL)!)
+        guard configuration.isValidBaseURL,
+              let url = URL(string: configuration.baseURL) else {
+            throw OpenAIError.invalidBaseURL
+        }
+
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(configuration.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let body: [String: Any] = [
-            "model": model,
+            "model": configuration.modelID,
             "messages": [
                 ["role": "system", "content": "You are an expert learning path designer. Always respond with valid JSON only."],
                 ["role": "user", "content": prompt]
@@ -40,7 +43,8 @@ final class OpenAIService {
 
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
-            throw OpenAIError.invalidResponse
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            throw OpenAIError.invalidResponse(statusCode: statusCode)
         }
 
         let decoded = try JSONDecoder().decode(CompletionResponse.self, from: data)
@@ -51,13 +55,15 @@ final class OpenAIService {
     }
 
     enum OpenAIError: LocalizedError {
-        case invalidResponse
+        case invalidBaseURL
+        case invalidResponse(statusCode: Int)
         case noContent
 
         var errorDescription: String? {
             switch self {
-            case .invalidResponse: "Invalid response from AI service"
-            case .noContent: "No content in AI response"
+            case .invalidBaseURL: "Invalid API URL. Please check your configuration in Settings."
+            case .invalidResponse(let statusCode): "API request failed with status code \(statusCode). Please verify your API key and configuration."
+            case .noContent: "No content in AI response. Please try again."
             }
         }
     }

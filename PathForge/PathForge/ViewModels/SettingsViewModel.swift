@@ -3,10 +3,40 @@ import Observation
 
 @Observable
 final class SettingsViewModel {
-    var apiKey = UserDefaults.standard.string(forKey: "openai_api_key") ?? "" {
+    var apiKey = UserDefaults.standard.string(forKey: AIConfigurationStorageKey.apiKey) ?? "" {
         didSet {
-            UserDefaults.standard.set(apiKey, forKey: "openai_api_key")
+            UserDefaults.standard.set(apiKey, forKey: AIConfigurationStorageKey.apiKey)
         }
+    }
+
+    var baseURL = UserDefaults.standard.string(forKey: AIConfigurationStorageKey.baseURL) ?? AIConfiguration.default.baseURL {
+        didSet {
+            UserDefaults.standard.set(baseURL, forKey: AIConfigurationStorageKey.baseURL)
+        }
+    }
+
+    var modelID = UserDefaults.standard.string(forKey: AIConfigurationStorageKey.modelID) ?? AIConfiguration.default.modelID {
+        didSet {
+            UserDefaults.standard.set(modelID, forKey: AIConfigurationStorageKey.modelID)
+        }
+    }
+
+    var showAdvancedSettings = false
+
+    var aiConfiguration: AIConfiguration {
+        AIConfiguration(apiKey: apiKey, baseURL: baseURL, modelID: modelID)
+    }
+
+    func applyPreset(_ preset: AIPreset) {
+        if !preset.isCustom {
+            baseURL = preset.baseURL
+            modelID = preset.modelID
+        }
+    }
+
+    func resetToDefaults() {
+        baseURL = AIConfiguration.default.baseURL
+        modelID = AIConfiguration.default.modelID
     }
 
     var reminderHour = UserDefaults.standard.integer(forKey: "reminder_hour") {

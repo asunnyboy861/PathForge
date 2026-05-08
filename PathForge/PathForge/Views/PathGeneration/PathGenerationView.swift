@@ -10,8 +10,8 @@ struct PathGenerationView: View {
     @State private var showAPIKeyAlert = false
 
     init() {
-        let apiKey = UserDefaults.standard.string(forKey: "openai_api_key") ?? ""
-        let service = PathGenerationService(openAIService: OpenAIService(apiKey: apiKey))
+        let config = AIConfiguration.loadFromStorage()
+        let service = PathGenerationService(openAIService: OpenAIService(configuration: config))
         _viewModel = State(initialValue: PathGenerationViewModel(pathService: service))
     }
 
@@ -70,7 +70,7 @@ struct PathGenerationView: View {
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {
-                Text("Please add your OpenAI API key in Settings to generate learning paths.")
+                Text("Please add your API key in Settings to generate learning paths.")
             }
             .alert("Upgrade to Pro", isPresented: $showPaywall) {
                 Button("Upgrade") {
@@ -85,6 +85,10 @@ struct PathGenerationView: View {
             }
             .onAppear {
                 viewModel.configure(modelContext: modelContext)
+                let config = AIConfiguration.loadFromStorage()
+                if config.apiKey.isEmpty {
+                    showAPIKeyAlert = true
+                }
             }
         }
     }

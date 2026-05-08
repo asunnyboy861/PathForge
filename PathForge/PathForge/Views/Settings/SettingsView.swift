@@ -43,7 +43,7 @@ struct SettingsView: View {
 
     private var apiSection: some View {
         Section {
-            SecureField("OpenAI API Key", text: $viewModel.apiKey)
+            SecureField("API Key", text: $viewModel.apiKey)
                 .autocorrectionDisabled()
                 .autocapitalization(.none)
 
@@ -55,6 +55,54 @@ struct SettingsView: View {
                 Label("API Key configured", systemImage: "checkmark.circle.fill")
                     .font(.caption)
                     .foregroundStyle(.pathGreen)
+            }
+
+            Toggle("Advanced Settings", isOn: $viewModel.showAdvancedSettings)
+
+            if viewModel.showAdvancedSettings {
+                TextField("Base URL", text: $viewModel.baseURL)
+                    .autocorrectionDisabled()
+                    .autocapitalization(.none)
+
+                Text("Default: \(AIConfiguration.default.baseURL)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                TextField("Model ID", text: $viewModel.modelID)
+                    .autocorrectionDisabled()
+                    .autocapitalization(.none)
+
+                Text("Default: \(AIConfiguration.default.modelID)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Quick Presets")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(AIConfiguration.presets) { preset in
+                                Button {
+                                    viewModel.applyPreset(preset)
+                                } label: {
+                                    Text(preset.name)
+                                        .font(.subheadline)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .tint(viewModel.baseURL == preset.baseURL && viewModel.modelID == preset.modelID ? .forgeBlue : .secondary)
+                            }
+                        }
+                    }
+
+                    Button("Reset to Defaults") {
+                        viewModel.resetToDefaults()
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                }
             }
         } header: {
             Text("AI Configuration")

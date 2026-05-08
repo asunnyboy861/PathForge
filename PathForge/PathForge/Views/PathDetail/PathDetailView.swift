@@ -40,8 +40,8 @@ struct PathDetailView: View {
         .navigationTitle(studyPath.title)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            let apiKey = UserDefaults.standard.string(forKey: "openai_api_key") ?? ""
-            let service = PathGenerationService(openAIService: OpenAIService(apiKey: apiKey))
+            let config = AIConfiguration.loadFromStorage()
+            let service = PathGenerationService(openAIService: OpenAIService(configuration: config))
             viewModel = PathDetailViewModel(pathService: service)
         }
         .sheet(isPresented: $showAdjustSheet) {
