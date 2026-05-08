@@ -5,6 +5,23 @@ struct SettingsView: View {
     @State private var subscriptionManager = SubscriptionManager()
     @State private var showPaywall = false
 
+    private var reminderDate: Binding<Date> {
+        Binding(
+            get: {
+                let calendar = Calendar.current
+                var components = DateComponents()
+                components.hour = viewModel.reminderHour
+                components.minute = viewModel.reminderMinute
+                return calendar.date(from: components) ?? Date()
+            },
+            set: { date in
+                let calendar = Calendar.current
+                viewModel.reminderHour = calendar.component(.hour, from: date)
+                viewModel.reminderMinute = calendar.component(.minute, from: date)
+            }
+        )
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -34,6 +51,10 @@ struct SettingsView: View {
                 Text("Required for AI path generation. Get your key at platform.openai.com")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            } else {
+                Label("API Key configured", systemImage: "checkmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.pathGreen)
             }
         } header: {
             Text("AI Configuration")
@@ -68,6 +89,15 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Free Plan")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text("\(subscriptionManager.remainingFreePaths) of \(subscriptionManager.maxFreePaths) paths remaining")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Button("Restore Purchases") {
@@ -88,12 +118,7 @@ struct SettingsView: View {
             Toggle("Study Reminders", isOn: $viewModel.notificationsEnabled)
 
             if viewModel.notificationsEnabled {
-                HStack {
-                    Text("Reminder Time")
-                    Spacer()
-                    Text("\(String(format: "%02d", viewModel.reminderHour)):\(String(format: "%02d", viewModel.reminderMinute))")
-                        .foregroundStyle(.secondary)
-                }
+                DatePicker("Reminder Time", selection: reminderDate, displayedComponents: .hourAndMinute)
             }
         } header: {
             Text("Notifications")
@@ -150,6 +175,9 @@ struct SettingsView: View {
             }
         } header: {
             Text("About")
+        } footer: {
+            Text("PathForge v1.0.0")
+                .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 }

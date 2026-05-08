@@ -5,6 +5,9 @@ struct PathGenerationView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel: PathGenerationViewModel
+    @State private var subscriptionManager = SubscriptionManager()
+    @State private var showPaywall = false
+    @State private var showAPIKeyAlert = false
 
     init() {
         let apiKey = UserDefaults.standard.string(forKey: "openai_api_key") ?? ""
@@ -41,6 +44,7 @@ struct PathGenerationView: View {
                     if let path = viewModel.generatedPath {
                         PathPreviewStep(viewModel: viewModel, generatedPath: path) {
                             viewModel.savePath()
+                            subscriptionManager.incrementFreePathsCreated()
                             dismiss()
                         }
                         .tag(PathGenerationViewModel.GenerationStep.pathPreview)
@@ -60,10 +64,24 @@ struct PathGenerationView: View {
                     }
                 }
             }
-            .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("OK") { viewModel.errorMessage = nil }
+            .alert("API Key Required", isPresented: $showAPIKeyAlert) {
+                Button("Go to Settings") {
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) { }
             } message: {
-                Text(viewModel.errorMessage ?? "")
+                Text("Please add your OpenAI API key in Settings to generate learning paths.")
+            }
+            .alert("Upgrade to Pro", isPresented: $showPaywall) {
+                Button("Upgrade") {
+                    showPaywall = false
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("You've used your free path. Upgrade to Pro for unlimited paths and AI adjustments.")
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView(subscriptionManager: subscriptionManager)
             }
             .onAppear {
                 viewModel.configure(modelContext: modelContext)

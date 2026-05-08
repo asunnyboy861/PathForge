@@ -5,7 +5,9 @@ struct PathDetailView: View {
     let studyPath: StudyPath
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel: PathDetailViewModel?
+    @State private var subscriptionManager = SubscriptionManager()
     @State private var showAdjustSheet = false
+    @State private var showPaywall = false
 
     var body: some View {
         ScrollView {
@@ -44,6 +46,9 @@ struct PathDetailView: View {
         }
         .sheet(isPresented: $showAdjustSheet) {
             adjustPathSheet
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView(subscriptionManager: subscriptionManager)
         }
     }
 
@@ -98,7 +103,7 @@ struct PathDetailView: View {
 
                             Spacer()
 
-                            if let url = URL(string: resource.url) {
+                            if let url = URL(string: resource.url), !resource.url.isEmpty {
                                 Link(destination: url) {
                                     Image(systemName: "arrow.up.right.square")
                                         .foregroundStyle(.forgeBlue)
@@ -116,11 +121,15 @@ struct PathDetailView: View {
 
     private var adjustPathButton: some View {
         Button {
-            showAdjustSheet = true
+            if subscriptionManager.canAdjustPath {
+                showAdjustSheet = true
+            } else {
+                showPaywall = true
+            }
         } label: {
             HStack {
                 Image(systemName: "arrow.triangle.2.circlepath")
-                Text("Adjust Path with AI")
+                Text(subscriptionManager.canAdjustPath ? "Adjust Path with AI" : "Adjust Path (Pro)")
             }
             .font(.headline)
             .foregroundStyle(.white)
@@ -156,6 +165,7 @@ struct PathDetailView: View {
                     Task {
                         await viewModel?.adjustPath(studyPath, modelContext: modelContext)
                         if viewModel?.errorMessage == nil {
+                            subscriptionManager.incrementFreeAdjustmentsUsed()
                             showAdjustSheet = false
                         }
                     }
@@ -179,6 +189,8 @@ struct PathDetailView: View {
                 Spacer()
             }
             .padding()
+            .frame(maxWidth: 720)
+            .frame(maxWidth: .infinity)
             .navigationTitle("Adjust Path")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

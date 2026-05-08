@@ -7,6 +7,18 @@ final class SubscriptionManager {
     var monthlyProduct: Product?
     var yearlyProduct: Product?
     var isLoading = false
+    var freePathsCreated: Int {
+        get { UserDefaults.standard.integer(forKey: "free_paths_created") }
+        set { UserDefaults.standard.set(newValue, forKey: "free_paths_created") }
+    }
+
+    var freeAdjustmentsUsed: Int {
+        get { UserDefaults.standard.integer(forKey: "free_adjustments_used") }
+        set { UserDefaults.standard.set(newValue, forKey: "free_adjustments_used") }
+    }
+
+    let maxFreePaths = 1
+    let maxFreeAdjustments = 0
 
     private var productIDs: [String] {
         ["com.zzoutuo.PathForge.monthly", "com.zzoutuo.PathForge.yearly"]
@@ -17,6 +29,30 @@ final class SubscriptionManager {
             await loadProducts()
             await checkSubscriptionStatus()
             await listenForTransactions()
+        }
+    }
+
+    var canCreatePath: Bool {
+        isProUser || freePathsCreated < maxFreePaths
+    }
+
+    var canAdjustPath: Bool {
+        isProUser || freeAdjustmentsUsed < maxFreeAdjustments
+    }
+
+    var remainingFreePaths: Int {
+        max(0, maxFreePaths - freePathsCreated)
+    }
+
+    func incrementFreePathsCreated() {
+        if !isProUser {
+            freePathsCreated += 1
+        }
+    }
+
+    func incrementFreeAdjustmentsUsed() {
+        if !isProUser {
+            freeAdjustmentsUsed += 1
         }
     }
 

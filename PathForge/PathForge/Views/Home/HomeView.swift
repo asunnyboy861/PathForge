@@ -87,6 +87,12 @@ struct HomeView: View {
                         viewModel.toggleTask(task, modelContext: modelContext)
                     }
                 }
+
+                if viewModel.todayTasks.count > 5 {
+                    Text("+\(viewModel.todayTasks.count - 5) more tasks")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .padding()
@@ -116,7 +122,9 @@ struct HomeView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(viewModel.studyPaths) { path in
-                            NavigationLink(value: path) {
+                            NavigationLink {
+                                PathDetailView(studyPath: path)
+                            } label: {
                                 PathCardView(studyPath: path)
                                     .frame(width: 180)
                             }
