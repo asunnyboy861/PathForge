@@ -6,6 +6,10 @@ struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPlan: Plan = .lifetime
     @State private var isPurchasing = false
+    @State private var isRetryingProducts = false
+    @State private var showPurchaseAlert = false
+    @State private var purchaseAlertTitle = ""
+    @State private var purchaseAlertMessage = ""
 
     enum Plan: CaseIterable, Identifiable {
         case lifetime
@@ -74,11 +78,15 @@ struct PaywallView: View {
 
                     featuresSection
 
-                    planSelector
-
-                    selectedPlanDetails
-
-                    purchaseButton
+                    if subscriptionManager.isLoading || isRetryingProducts {
+                        productLoadingSection
+                    } else if subscriptionManager.productsLoadFailed {
+                        productLoadFailedSection
+                    } else {
+                        planSelector
+                        selectedPlanDetails
+                        purchaseButton
+                    }
 
                     restoreButton
 
@@ -93,6 +101,16 @@ struct PaywallView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Close") { dismiss() }
+                }
+            }
+            .alert(purchaseAlertTitle, isPresented: $showPurchaseAlert) {
+                Button("OK") {}
+            } message: {
+                Text(purchaseAlertMessage)
+            }
+            .task {
+                if !subscriptionManager.productsLoaded && !subscriptionManager.isLoading {
+                    await subscriptionManager.loadProducts()
                 }
             }
         }
@@ -126,6 +144,59 @@ struct PaywallView: View {
             FeatureRow(icon: "paintbrush", title: "Custom Widgets", description: "Personalize your home screen")
             FeatureRow(icon: "folder", title: "Saved AI Profiles", description: "Manage multiple API configurations")
         }
+    }
+
+    private var productLoadingSection: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .scaleEffect(1.5)
+            Text("Loading subscription options...")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(40)
+    }
+
+    private var productLoadFailedSection: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 36))
+                .foregroundStyle(.orange)
+
+            Text("Unable to load subscription options")
+                .font(.headline)
+
+            Text("Please check your internet connection and try again.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button {
+                Task {
+                    isRetryingProducts = true
+                    await subscriptionManager.retryLoadProducts()
+                    isRetryingProducts = false
+                }
+            } label: {
+                HStack {
+                    if isRetryingProducts {
+                        ProgressView()
+                            .tint(.white)
+                    }
+                    Text("Try Again")
+                }
+                .font(.headline)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 32)
+                .padding(.vertical, 12)
+                .background(Color.forgeBlue)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .disabled(isRetryingProducts)
+        }
+        .padding(24)
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     private var planSelector: some View {
@@ -162,8 +233,14 @@ struct PaywallView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Text(plan.priceText)
-                .font(.headline)
+            if let product = productForPlan(plan) {
+                Text(product.displayPrice)
+                    .font(.headline)
+            } else {
+                Text(plan.priceText)
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+            }
             Image(systemName: selectedPlan == plan ? "largecircle.fill.circle" : "circle")
                 .foregroundStyle(selectedPlan == plan ? .forgeBlue : .secondary)
         }
@@ -174,6 +251,17 @@ struct PaywallView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(selectedPlan == plan ? Color.forgeBlue : Color.secondary.opacity(0.3), lineWidth: selectedPlan == plan ? 2 : 1)
         )
+    }
+
+    private func productForPlan(_ plan: Plan) -> Product? {
+        switch plan {
+        case .lifetime:
+            return subscriptionManager.lifetimeProduct
+        case .monthly:
+            return subscriptionManager.monthlyProduct
+        case .yearly:
+            return subscriptionManager.yearlyProduct
+        }
     }
 
     private var selectedPlanDetails: some View {
@@ -200,22 +288,26 @@ struct PaywallView: View {
         Button {
             Task {
                 isPurchasing = true
-                let product: Product?
-                switch selectedPlan {
-                case .lifetime:
-                    product = subscriptionManager.lifetimeProduct
-                case .monthly:
-                    product = subscriptionManager.monthlyProduct
-                case .yearly:
-                    product = subscriptionManager.yearlyProduct
-                }
-                if let product {
-                    let success = await subscriptionManager.purchase(product)
-                    if success {
+                let result = await subscriptionManager.purchaseProduct(for: selectedPlan)
+                isPurchasing = false
+
+                switch result {
+                case .success:
+                    purchaseAlertTitle = "Success!"
+                    purchaseAlertMessage = "Your purchase was successful. Thank you for supporting PathForge!"
+                    showPurchaseAlert = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                         dismiss()
                     }
+                case .failure(let error):
+                    if case .userCancelled = error {
+                        // Don't show alert for user cancellation
+                    } else {
+                        purchaseAlertTitle = "Purchase Failed"
+                        purchaseAlertMessage = error.errorDescription ?? "An error occurred during purchase."
+                        showPurchaseAlert = true
+                    }
                 }
-                isPurchasing = false
             }
         } label: {
             HStack {
@@ -238,7 +330,22 @@ struct PaywallView: View {
     private var restoreButton: some View {
         Button("Restore Purchases") {
             Task {
-                await subscriptionManager.restorePurchases()
+                let result = await subscriptionManager.restorePurchases()
+                switch result {
+                case .success(let hasActiveSubscription):
+                    if hasActiveSubscription {
+                        purchaseAlertTitle = "Restored"
+                        purchaseAlertMessage = "Your purchases have been successfully restored."
+                    } else {
+                        purchaseAlertTitle = "No Purchases Found"
+                        purchaseAlertMessage = "No previous purchases were found. If you believe this is an error, please contact support."
+                    }
+                    showPurchaseAlert = true
+                case .failure(let error):
+                    purchaseAlertTitle = "Restore Failed"
+                    purchaseAlertMessage = error.errorDescription ?? "Failed to restore purchases. Please try again."
+                    showPurchaseAlert = true
+                }
             }
         }
         .font(.subheadline)
@@ -246,13 +353,41 @@ struct PaywallView: View {
     }
 
     private var legalLinks: some View {
-        HStack(spacing: 16) {
-            Link("Terms", destination: URL(string: "https://asunnyboy861.github.io/PathForge/terms.html")!)
-            Text("·")
-            Link("Privacy", destination: URL(string: "https://asunnyboy861.github.io/PathForge/privacy.html")!)
+        VStack(spacing: 12) {
+            HStack(spacing: 16) {
+                Link("Terms of Use", destination: URL(string: "https://asunnyboy861.github.io/PathForge/terms.html")!)
+                Text("·")
+                Link("Privacy Policy", destination: URL(string: "https://asunnyboy861.github.io/PathForge/privacy.html")!)
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            subscriptionInfoText
         }
-        .font(.caption)
-        .foregroundStyle(.secondary)
+    }
+
+    private var subscriptionInfoText: some View {
+        VStack(spacing: 4) {
+            Text("Auto-renewable subscriptions:")
+                .font(.caption2)
+                .fontWeight(.medium)
+
+            if let monthly = subscriptionManager.monthlyProduct {
+                Text("• \(monthly.displayName): \(monthly.displayPrice)/month")
+                    .font(.caption2)
+            }
+            if let yearly = subscriptionManager.yearlyProduct {
+                Text("• \(yearly.displayName): \(yearly.displayPrice)/year")
+                    .font(.caption2)
+            }
+
+            Text("Payment will be charged to your Apple ID account. Subscription automatically renews unless canceled at least 24 hours before the end of the current period. You can manage and cancel your subscriptions in App Store settings.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.top, 4)
+        }
+        .padding(.horizontal)
     }
 }
 
