@@ -1,5 +1,6 @@
 import SwiftUI
 import StoreKit
+import SafariServices
 
 struct PaywallView: View {
     let subscriptionManager: SubscriptionManager
@@ -10,6 +11,10 @@ struct PaywallView: View {
     @State private var showPurchaseAlert = false
     @State private var purchaseAlertTitle = ""
     @State private var purchaseAlertMessage = ""
+    @State private var showSubscriptionStore = false
+
+    private let privacyPolicyURL = URL(string: "https://asunnyboy861.github.io/PathForge/privacy.html")!
+    private let termsOfUseURL = URL(string: "https://asunnyboy861.github.io/PathForge/terms.html")!
 
     enum Plan: CaseIterable, Identifiable {
         case lifetime
@@ -29,8 +34,8 @@ struct PaywallView: View {
         var subtitle: String {
             switch self {
             case .lifetime: return "One-time purchase"
-            case .monthly: return "Billed monthly"
-            case .yearly: return "Billed annually"
+            case .monthly: return "1 month, auto-renewable"
+            case .yearly: return "1 year, auto-renewable"
             }
         }
 
@@ -90,6 +95,8 @@ struct PaywallView: View {
 
                     restoreButton
 
+                    subscriptionStoreButton
+
                     subscriptionInfoText
 
                     legalLinks
@@ -114,6 +121,31 @@ struct PaywallView: View {
                 if !subscriptionManager.productsLoaded && !subscriptionManager.isLoading {
                     await subscriptionManager.loadProducts()
                 }
+            }
+            .sheet(isPresented: $showSubscriptionStore) {
+                SubscriptionStoreView(groupID: "com.zzoutuo.PathForge.premium")
+                    .storeButton(.visible, for: .restorePurchases, .policies, .redeemCode)
+                    .subscriptionStorePolicyDestination(url: privacyPolicyURL, for: .privacyPolicy)
+                    .subscriptionStorePolicyDestination(url: termsOfUseURL, for: .termsOfService)
+                    .onInAppPurchaseCompletion { product, result in
+                        if case .success(let purchaseResult) = result {
+                            if case .success(let verification) = purchaseResult {
+                                if case .verified(let transaction) = verification {
+                                    subscriptionManager.isProUser = true
+                                    if transaction.productID == "com.zzoutuo.PathForge.pro.lifetime" {
+                                        subscriptionManager.isLifetimeUser = true
+                                        UserDefaults.standard.set(true, forKey: "has_lifetime_purchase")
+                                    }
+                                    purchaseAlertTitle = "Success!"
+                                    purchaseAlertMessage = "Your purchase was successful. Thank you for supporting PathForge!"
+                                    showPurchaseAlert = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                        dismiss()
+                                    }
+                                }
+                            }
+                        }
+                    }
             }
         }
     }
@@ -303,7 +335,6 @@ struct PaywallView: View {
                     }
                 case .failure(let error):
                     if case .userCancelled = error {
-                        // Don't show alert for user cancellation
                     } else {
                         purchaseAlertTitle = "Purchase Failed"
                         purchaseAlertMessage = error.errorDescription ?? "An error occurred during purchase."
@@ -354,12 +385,29 @@ struct PaywallView: View {
         .foregroundStyle(.forgeBlue)
     }
 
+    private var subscriptionStoreButton: some View {
+        Button {
+            showSubscriptionStore = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "app.badge.checkmark")
+                Text("View Apple Subscription Options")
+            }
+            .font(.subheadline)
+            .foregroundStyle(.white)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .background(Color.forgeBlue)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+    }
+
     private var legalLinks: some View {
         VStack(spacing: 8) {
             HStack(spacing: 16) {
-                Link("Terms of Use (EULA)", destination: URL(string: "https://asunnyboy861.github.io/PathForge/terms.html")!)
-                Text("·")
-                Link("Privacy Policy", destination: URL(string: "https://asunnyboy861.github.io/PathForge/privacy.html")!)
+                Link("Terms of Use (EULA)", destination: termsOfUseURL)
+                Text("\u{00B7}")
+                Link("Privacy Policy", destination: privacyPolicyURL)
             }
             .font(.caption)
             .foregroundStyle(.forgeBlue)
@@ -375,34 +423,34 @@ struct PaywallView: View {
             VStack(alignment: .leading, spacing: 4) {
                 if let monthly = subscriptionManager.monthlyProduct {
                     HStack(spacing: 4) {
-                        Text("•")
-                        Text("\(monthly.displayName): \(monthly.displayPrice) / 1 month")
+                        Text("\u{2022}")
+                        Text("\(monthly.displayName): \(monthly.displayPrice) / 1 month (auto-renewable)")
                     }
                     .font(.caption2)
                 } else {
                     HStack(spacing: 4) {
-                        Text("•")
-                        Text("Monthly Premium: $2.99 / 1 month")
+                        Text("\u{2022}")
+                        Text("Monthly Premium: $2.99 / 1 month (auto-renewable)")
                     }
                     .font(.caption2)
                 }
 
                 if let yearly = subscriptionManager.yearlyProduct {
                     HStack(spacing: 4) {
-                        Text("•")
-                        Text("\(yearly.displayName): \(yearly.displayPrice) / 1 year")
+                        Text("\u{2022}")
+                        Text("\(yearly.displayName): \(yearly.displayPrice) / 1 year (auto-renewable)")
                     }
                     .font(.caption2)
                 } else {
                     HStack(spacing: 4) {
-                        Text("•")
-                        Text("Yearly Premium: $14.99 / 1 year")
+                        Text("\u{2022}")
+                        Text("Yearly Premium: $14.99 / 1 year (auto-renewable)")
                     }
                     .font(.caption2)
                 }
 
                 HStack(spacing: 4) {
-                    Text("•")
+                    Text("\u{2022}")
                     Text("Lifetime Access: $29.99 one-time purchase (non-subscription)")
                 }
                 .font(.caption2)
@@ -415,7 +463,7 @@ struct PaywallView: View {
                     .multilineTextAlignment(.center)
 
                 Link(destination: URL(string: "https://apps.apple.com/account/subscriptions")!) {
-                    Text("Manage or cancel your subscriptions in App Store Settings →")
+                    Text("Manage or cancel your subscriptions in App Store Settings \u{2192}")
                         .font(.caption2)
                         .foregroundStyle(.forgeBlue)
                         .multilineTextAlignment(.center)
@@ -429,6 +477,16 @@ struct PaywallView: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .padding(.horizontal)
     }
+}
+
+struct SafariWebView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        SFSafariViewController(url: url)
+    }
+
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
 }
 
 struct FeatureRow: View {
