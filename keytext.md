@@ -31,15 +31,18 @@ Set daily study reminders to build consistent learning habits and maintain your 
 PRO SUBSCRIPTION:
 Unlock unlimited paths, AI adjustments, detailed statistics, and more with PathForge Pro.
 
-Monthly: $4.99/month
-Yearly: $29.99/year (save 50%)
-7-day free trial for new subscribers
+Monthly Premium: $2.99 / 1 month (auto-renewable subscription)
+Yearly Premium: $14.99 / 1 year (auto-renewable subscription, save 58%)
+Lifetime Access: $29.99 one-time purchase (non-subscription)
 
 SUBSCRIPTION INFORMATION:
 - Payment will be charged to your Apple ID account at confirmation of purchase.
 - Subscription automatically renews unless it is canceled at least 24 hours before the end of the current period.
+- Your account will be charged for renewal within 24 hours prior to the end of the current period.
 - You can manage and cancel your subscriptions by going to your account settings on the App Store after purchase.
-- Any unused portion of a free trial period, if offered, will be forfeited when the user purchases a subscription.
+
+Terms of Use (EULA): https://asunnyboy861.github.io/PathForge/terms.html
+Privacy Policy: https://asunnyboy861.github.io/PathForge/privacy.html
 
 Perfect for:
 - Self-learners and autodidacts

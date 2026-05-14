@@ -90,6 +90,8 @@ struct PaywallView: View {
 
                     restoreButton
 
+                    subscriptionInfoText
+
                     legalLinks
                 }
                 .padding()
@@ -353,40 +355,78 @@ struct PaywallView: View {
     }
 
     private var legalLinks: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             HStack(spacing: 16) {
-                Link("Terms of Use", destination: URL(string: "https://asunnyboy861.github.io/PathForge/terms.html")!)
+                Link("Terms of Use (EULA)", destination: URL(string: "https://asunnyboy861.github.io/PathForge/terms.html")!)
                 Text("·")
                 Link("Privacy Policy", destination: URL(string: "https://asunnyboy861.github.io/PathForge/privacy.html")!)
             }
             .font(.caption)
-            .foregroundStyle(.secondary)
-
-            subscriptionInfoText
+            .foregroundStyle(.forgeBlue)
         }
     }
 
     private var subscriptionInfoText: some View {
-        VStack(spacing: 4) {
-            Text("Auto-renewable subscriptions:")
-                .font(.caption2)
-                .fontWeight(.medium)
+        VStack(spacing: 6) {
+            Text("Subscription Details")
+                .font(.caption)
+                .fontWeight(.semibold)
 
-            if let monthly = subscriptionManager.monthlyProduct {
-                Text("• \(monthly.displayName): \(monthly.displayPrice)/month")
+            VStack(alignment: .leading, spacing: 4) {
+                if let monthly = subscriptionManager.monthlyProduct {
+                    HStack(spacing: 4) {
+                        Text("•")
+                        Text("\(monthly.displayName): \(monthly.displayPrice) / 1 month")
+                    }
                     .font(.caption2)
-            }
-            if let yearly = subscriptionManager.yearlyProduct {
-                Text("• \(yearly.displayName): \(yearly.displayPrice)/year")
+                } else {
+                    HStack(spacing: 4) {
+                        Text("•")
+                        Text("Monthly Premium: $2.99 / 1 month")
+                    }
                     .font(.caption2)
+                }
+
+                if let yearly = subscriptionManager.yearlyProduct {
+                    HStack(spacing: 4) {
+                        Text("•")
+                        Text("\(yearly.displayName): \(yearly.displayPrice) / 1 year")
+                    }
+                    .font(.caption2)
+                } else {
+                    HStack(spacing: 4) {
+                        Text("•")
+                        Text("Yearly Premium: $14.99 / 1 year")
+                    }
+                    .font(.caption2)
+                }
+
+                HStack(spacing: 4) {
+                    Text("•")
+                    Text("Lifetime Access: $29.99 one-time purchase (non-subscription)")
+                }
+                .font(.caption2)
             }
 
-            Text("Payment will be charged to your Apple ID account. Subscription automatically renews unless canceled at least 24 hours before the end of the current period. You can manage and cancel your subscriptions in App Store settings.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.top, 4)
+            VStack(spacing: 3) {
+                Text("Payment will be charged to your Apple ID account at confirmation of purchase. Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
+                Link(destination: URL(string: "https://apps.apple.com/account/subscriptions")!) {
+                    Text("Manage or cancel your subscriptions in App Store Settings →")
+                        .font(.caption2)
+                        .foregroundStyle(.forgeBlue)
+                        .multilineTextAlignment(.center)
+                        .underline()
+                }
+            }
+            .padding(.top, 2)
         }
+        .padding(12)
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
         .padding(.horizontal)
     }
 }

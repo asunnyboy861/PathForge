@@ -339,6 +339,17 @@ struct SettingsView: View {
                             .foregroundStyle(.pathGreen)
                     }
                 }
+
+                if !subscriptionManager.isLifetimeUser {
+                    Link(destination: URL(string: "https://apps.apple.com/account/subscriptions")!) {
+                        HStack {
+                            Text("Manage Subscription")
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             } else {
                 Button {
                     showPaywall = true
@@ -372,6 +383,14 @@ struct SettingsView: View {
             }
         } header: {
             Text("Subscription")
+        } footer: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Monthly Premium: $2.99 / 1 month (auto-renewable)")
+                Text("Yearly Premium: $14.99 / 1 year (auto-renewable)")
+                Text("Lifetime Access: $29.99 one-time purchase")
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView(subscriptionManager: subscriptionManager)
