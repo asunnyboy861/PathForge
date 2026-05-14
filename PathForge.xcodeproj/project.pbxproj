@@ -27,6 +27,7 @@
 		6A5D5A362FA8CA4E009FC51E /* PathForge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PathForge.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A5D5A432FA8CA50009FC51E /* PathForgeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PathForgeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A5D5A4D2FA8CA50009FC51E /* PathForgeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PathForgeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6AB1F6B32FB5A51F006AF96E /* PathForge.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = PathForge.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -88,6 +89,13 @@
 				6A5D5A362FA8CA4E009FC51E /* PathForge.app */,
 				6A5D5A432FA8CA50009FC51E /* PathForgeTests.xctest */,
 				6A5D5A4D2FA8CA50009FC51E /* PathForgeUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6AB1F6B42FB5A51F006AF96E /* Products */ = {
+			isa = PBXGroup;
+			children = (
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -198,6 +206,12 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 6A5D5A372FA8CA4E009FC51E /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 6AB1F6B42FB5A51F006AF96E /* Products */;
+					ProjectRef = 6AB1F6B32FB5A51F006AF96E /* PathForge.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				6A5D5A352FA8CA4E009FC51E /* PathForge */,
