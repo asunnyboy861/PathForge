@@ -12,6 +12,17 @@ struct PathCardView: View {
 
                 Spacer()
 
+                if studyPath.isDemo {
+                    Text("Demo")
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.forgeBlue.opacity(0.15))
+                        .foregroundStyle(.forgeBlue)
+                        .clipShape(Capsule())
+                }
+
                 Text("Week \(studyPath.currentWeekNumber)/\(studyPath.totalWeeks)")
                     .font(.caption)
                     .foregroundStyle(.secondary)

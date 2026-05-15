@@ -16,6 +16,11 @@ final class PathGenerationViewModel {
     var generatedPath: PathGenerationService.GeneratedPath?
     var errorMessage: String?
 
+    var canGenerate: Bool {
+        let config = AIConfiguration.loadFromStorage()
+        return config.isConfigured
+    }
+
     enum GenerationStep: Int, CaseIterable {
         case goalInput = 0
         case levelAssessment = 1
@@ -95,7 +100,15 @@ final class PathGenerationViewModel {
             generatedPath = path
             currentStep = .pathPreview
         } catch {
-            errorMessage = error.localizedDescription
+            if error.localizedDescription.contains("status code 401") {
+                errorMessage = "Invalid API key. Please check your API key in Settings."
+            } else if error.localizedDescription.contains("status code 429") {
+                errorMessage = "API rate limit reached. Please wait a moment and try again."
+            } else if error.localizedDescription.contains("timed out") || error.localizedDescription.contains("timeout") {
+                errorMessage = "Request timed out. Please check your network connection."
+            } else {
+                errorMessage = error.localizedDescription
+            }
             currentStep = .timePreferences
         }
 

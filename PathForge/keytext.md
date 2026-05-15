@@ -1,12 +1,15 @@
 # App Store Metadata
 
 ## Promotional Text
-AI-powered learning paths tailored to you. Tell PathForge your goal and get a personalized week-by-week study plan instantly.
+AI-powered learning paths tailored to you. Bring your own API key and generate personalized study plans instantly — no subscription required for core features.
 
 ## Description
 Master any skill with AI-powered learning paths tailored just for you.
 
 PathForge creates personalized, step-by-step study plans based on your goals, current level, and available time. Whether you are learning to code, picking up a new language, or mastering a musical instrument, PathForge designs the perfect roadmap to get you there.
+
+BYOK — BRING YOUR OWN KEY
+PathForge uses your own OpenAI, DeepSeek, or Ollama API key. You control your AI costs directly — no hidden fees, no usage limits on AI features. Your key stays on your device and is never shared.
 
 KEY FEATURES:
 
@@ -19,17 +22,24 @@ Each week includes curated tasks with estimated durations, resource links, and h
 AI Path Adjustment
 Stuck on a concept or moving faster than expected? Provide feedback and PathForge will dynamically adjust your remaining plan while preserving your completed progress.
 
-Progress Tracking and Statistics
-Visualize your learning journey with detailed charts, streak tracking, and milestone completion stats. Stay motivated by seeing how far you have come.
+Demo Mode
+Explore PathForge with a pre-loaded sample learning path — no API key needed. See how tasks, milestones, and progress tracking work before connecting your own AI.
 
-iCloud Sync
-Your learning paths sync seamlessly across all your Apple devices. Start studying on your iPhone and continue on your iPad.
+Progress Tracking
+Visualize your learning journey with streak tracking and milestone completion stats. Stay motivated by seeing how far you have come.
 
 Study Reminders
 Set daily study reminders to build consistent learning habits and maintain your streak.
 
-PRO SUBSCRIPTION:
-Unlock unlimited paths, AI adjustments, detailed statistics, and more with PathForge Pro.
+PRO SUBSCRIPTION — UNLOCK POWERFUL EXTRAS
+While AI path generation is always free with your API key, Pro unlocks advanced features:
+
+- Detailed Statistics: Charts, trends, and learning insights
+- Export Reports: Share your progress as PDF
+- Custom Widgets: Personalize your home screen
+- Saved AI Profiles: Manage multiple API configurations
+- iCloud Sync: Sync across all your Apple devices
+- Priority Support: Get help faster when you need it
 
 Monthly Premium: $2.99 / 1 month (auto-renewable subscription)
 Yearly Premium: $14.99 / 1 year (auto-renewable subscription, save 58%)

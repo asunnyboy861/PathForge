@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
     @State private var selectedTab = 0
 
     var body: some View {
@@ -31,6 +32,9 @@ struct ContentView: View {
                 .tag(3)
         }
         .tint(.forgeBlue)
+        .onAppear {
+            DemoDataService.loadDemoDataIfNeeded(modelContext: modelContext)
+        }
     }
 }
 

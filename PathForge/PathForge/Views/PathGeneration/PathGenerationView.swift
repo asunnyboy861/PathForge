@@ -5,9 +5,6 @@ struct PathGenerationView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel: PathGenerationViewModel
-    @State private var subscriptionManager = SubscriptionManager()
-    @State private var showPaywall = false
-    @State private var showAPIKeyAlert = false
     @State private var savedProfiles: [SavedAIProfile] = AIProfileManager.shared.loadProfiles()
     @State private var selectedProfileId: String? = AIProfileManager.shared.getActiveProfileId()
 
@@ -46,7 +43,6 @@ struct PathGenerationView: View {
                     if let path = viewModel.generatedPath {
                         PathPreviewStep(viewModel: viewModel, generatedPath: path) {
                             viewModel.savePath()
-                            subscriptionManager.incrementFreePathsCreated()
                             dismiss()
                         }
                         .tag(PathGenerationViewModel.GenerationStep.pathPreview)
@@ -66,42 +62,19 @@ struct PathGenerationView: View {
                     }
                 }
             }
-            .alert("API Key Required", isPresented: $showAPIKeyAlert) {
-                Button("Go to Settings") {
-                    dismiss()
-                }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                Text("Please add your API key in Settings to generate learning paths.")
-            }
-            .alert("Upgrade to Pro", isPresented: $showPaywall) {
-                Button("Upgrade") {
-                    showPaywall = false
-                }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                Text("You've used your free path. Upgrade to Pro for unlimited paths and AI adjustments.")
-            }
-            .sheet(isPresented: $showPaywall) {
-                PaywallView(subscriptionManager: subscriptionManager)
-            }
             .onAppear {
                 viewModel.configure(modelContext: modelContext)
-                let config = AIConfiguration.loadFromStorage()
-                if config.apiKey.isEmpty {
-                    showAPIKeyAlert = true
-                }
             }
             .onChange(of: viewModel.currentStep) { oldValue, newValue in
                 if newValue == .generating {
-                    let config: AIConfiguration
+                    let activeConfig: AIConfiguration
                     if let profileId = selectedProfileId,
                        let profile = savedProfiles.first(where: { $0.id == profileId }) {
-                        config = AIConfiguration(apiKey: profile.apiKey, baseURL: profile.baseURL, modelID: profile.modelID)
+                        activeConfig = AIConfiguration(apiKey: profile.apiKey, baseURL: profile.baseURL, modelID: profile.modelID)
                     } else {
-                        config = AIConfiguration.loadFromStorage()
+                        activeConfig = AIConfiguration.loadFromStorage()
                     }
-                    let service = PathGenerationService(openAIService: OpenAIService(configuration: config))
+                    let service = PathGenerationService(openAIService: OpenAIService(configuration: activeConfig))
                     viewModel.pathService = service
                 }
             }
@@ -332,15 +305,45 @@ struct TimePreferencesStep: View {
 
                 Spacer(minLength: 40)
 
-                Button("Generate Path") {
-                    viewModel.nextStep()
+                if viewModel.canGenerate {
+                    Button {
+                        viewModel.nextStep()
+                    } label: {
+                        HStack {
+                            Image(systemName: "sparkles")
+                            Text("Generate Path")
+                        }
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.forgeBlue)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                } else {
+                    VStack(spacing: 8) {
+                        Button {
+                            viewModel.nextStep()
+                        } label: {
+                            HStack {
+                                Image(systemName: "key")
+                                Text("Set Up API Key")
+                            }
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.gray)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .disabled(true)
+
+                        Text("Add your API key in Settings to generate AI-powered paths")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
                 }
-                .font(.headline)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.forgeBlue)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .padding()
         }
@@ -397,6 +400,7 @@ struct TimePreferencesStep: View {
 
 struct GeneratingStep: View {
     let viewModel: PathGenerationViewModel
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(spacing: 20) {
@@ -420,21 +424,22 @@ struct GeneratingStep: View {
                 VStack(spacing: 12) {
                     Divider()
 
-                    Label(error, systemImage: "exclamationmark.triangle.fill")
-                        .font(.subheadline)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                    Label {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Could Not Generate Path")
+                                .fontWeight(.semibold)
+                            Text(error)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                    .padding(.horizontal)
 
                     Button("Go to Settings") {
-                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let rootVC = windowScene.windows.first?.rootViewController {
-                            var currentVC = rootVC
-                            while let presented = currentVC.presentedViewController {
-                                currentVC = presented
-                            }
-                            currentVC.dismiss(animated: true)
-                        }
+                        dismiss()
                     }
                     .font(.subheadline)
                     .foregroundStyle(.forgeBlue)

@@ -156,12 +156,12 @@ struct PaywallView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(.yellow)
 
-            Text("Unlock Your Full Potential")
+            Text("Unlock Pro Features")
                 .font(.title2)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
 
-            Text("You bring the API key. We provide the tools.")
+            Text("AI path generation is always free with your API key. Pro unlocks powerful extras.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -171,12 +171,12 @@ struct PaywallView: View {
 
     private var featuresSection: some View {
         VStack(spacing: 12) {
-            FeatureRow(icon: "infinity", title: "Unlimited Learning Paths", description: "Create as many paths as you want")
-            FeatureRow(icon: "arrow.triangle.2.circlepath", title: "AI Path Adjustment", description: "Adapt your plan based on feedback")
-            FeatureRow(icon: "chart.bar", title: "Detailed Statistics", description: "Charts, trends, and insights")
+            FeatureRow(icon: "chart.bar", title: "Detailed Statistics", description: "Charts, trends, and learning insights")
             FeatureRow(icon: "square.and.arrow.up", title: "Export Reports", description: "Share your progress as PDF")
             FeatureRow(icon: "paintbrush", title: "Custom Widgets", description: "Personalize your home screen")
             FeatureRow(icon: "folder", title: "Saved AI Profiles", description: "Manage multiple API configurations")
+            FeatureRow(icon: "icloud", title: "iCloud Sync", description: "Sync across all your devices")
+            FeatureRow(icon: "headset", title: "Priority Support", description: "Get help faster when you need it")
         }
     }
 
@@ -200,7 +200,7 @@ struct PaywallView: View {
             Text("Unable to load subscription options")
                 .font(.headline)
 
-            Text("Please check your internet connection and try again.")
+            Text("This is expected in sandbox/test environments. In production, subscriptions will load normally. You can still explore all free features of PathForge.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

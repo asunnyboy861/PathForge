@@ -18,6 +18,10 @@ final class OpenAIService {
     }
 
     func complete(prompt: String) async throws -> String {
+        if configuration.apiKey.hasPrefix("sk-demo") || configuration.apiKey.isEmpty {
+            return try await generateDemoResponse(prompt: prompt)
+        }
+
         guard configuration.isValidBaseURL,
               let url = URL(string: configuration.baseURL) else {
             throw OpenAIError.invalidBaseURL
@@ -59,6 +63,10 @@ final class OpenAIService {
     }
 
     func testConnection() async throws -> String {
+        if configuration.apiKey.hasPrefix("sk-demo") || configuration.apiKey.isEmpty {
+            return "OK"
+        }
+
         guard configuration.isValidBaseURL,
               let url = URL(string: configuration.baseURL) else {
             throw OpenAIError.invalidBaseURL
@@ -95,6 +103,78 @@ final class OpenAIService {
             throw OpenAIError.noContent
         }
         return content.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func generateDemoResponse(prompt: String) async throws -> String {
+        try await Task.sleep(for: .seconds(2))
+
+        let demoPath: [String: Any] = [
+            "title": "Demo: Introduction to Programming",
+            "description": "A beginner-friendly learning path to get started with programming fundamentals.",
+            "milestones": [
+                [
+                    "weekNumber": 1,
+                    "title": "Getting Started",
+                    "description": "Set up your development environment and learn basic concepts.",
+                    "tasks": [
+                        [
+                            "title": "Install a Code Editor",
+                            "description": "Download and install VS Code or your preferred editor.",
+                            "estimatedMinutes": 30,
+                            "resourceType": "tool",
+                            "resourceURL": "https://code.visualstudio.com/"
+                        ],
+                        [
+                            "title": "Hello World Program",
+                            "description": "Write your first program that prints 'Hello, World!'.",
+                            "estimatedMinutes": 20,
+                            "resourceType": "tutorial",
+                            "resourceURL": "https://www.freecodecamp.org/"
+                        ]
+                    ]
+                ],
+                [
+                    "weekNumber": 2,
+                    "title": "Variables and Data Types",
+                    "description": "Learn about variables, strings, numbers, and booleans.",
+                    "tasks": [
+                        [
+                            "title": "Learn Variable Basics",
+                            "description": "Understand how to declare and use variables.",
+                            "estimatedMinutes": 45,
+                            "resourceType": "article",
+                            "resourceURL": "https://developer.mozilla.org/"
+                        ],
+                        [
+                            "title": "Practice Exercises",
+                            "description": "Complete exercises on variables and data types.",
+                            "estimatedMinutes": 60,
+                            "resourceType": "exercise",
+                            "resourceURL": "https://www.freecodecamp.org/"
+                        ]
+                    ]
+                ]
+            ],
+            "resources": [
+                [
+                    "title": "freeCodeCamp",
+                    "url": "https://www.freecodecamp.org/",
+                    "type": "course",
+                    "isFree": true,
+                    "qualityScore": 5
+                ],
+                [
+                    "title": "MDN Web Docs",
+                    "url": "https://developer.mozilla.org/",
+                    "type": "documentation",
+                    "isFree": true,
+                    "qualityScore": 5
+                ]
+            ]
+        ]
+
+        let jsonData = try JSONSerialization.data(withJSONObject: demoPath, options: [])
+        return String(data: jsonData, encoding: .utf8) ?? "{}"
     }
 
     enum OpenAIError: LocalizedError {

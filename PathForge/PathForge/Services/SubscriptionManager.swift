@@ -14,7 +14,7 @@ enum PurchaseError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .productNotFound:
-            return "Unable to load subscription options. Please check your internet connection and try again."
+            return "Subscription options are not available in this environment. This is expected in sandbox/testing. In production, subscriptions will load normally."
         case .purchaseFailed(let message):
             return message
         case .pending:
@@ -46,19 +46,6 @@ final class SubscriptionManager {
     private var loadRetryCount = 0
     private let maxLoadRetries = 3
 
-    var freePathsCreated: Int {
-        get { UserDefaults.standard.integer(forKey: "free_paths_created") }
-        set { UserDefaults.standard.set(newValue, forKey: "free_paths_created") }
-    }
-
-    var freeAdjustmentsUsed: Int {
-        get { UserDefaults.standard.integer(forKey: "free_adjustments_used") }
-        set { UserDefaults.standard.set(newValue, forKey: "free_adjustments_used") }
-    }
-
-    let maxFreePaths = 1
-    let maxFreeAdjustments = 0
-
     private var subscriptionProductIDs: [String] {
         ["com.zzoutuo.PathForge.pro.monthly", "com.zzoutuo.PathForge.pro.yearly"]
     }
@@ -79,28 +66,24 @@ final class SubscriptionManager {
         }
     }
 
-    var canCreatePath: Bool {
-        isProUser || freePathsCreated < maxFreePaths
+    var canAccessDetailedStats: Bool {
+        isProUser
     }
 
-    var canAdjustPath: Bool {
-        isProUser || freeAdjustmentsUsed < maxFreeAdjustments
+    var canExportReports: Bool {
+        isProUser
     }
 
-    var remainingFreePaths: Int {
-        max(0, maxFreePaths - freePathsCreated)
+    var canUseCustomWidgets: Bool {
+        isProUser
     }
 
-    func incrementFreePathsCreated() {
-        if !isProUser {
-            freePathsCreated += 1
-        }
+    var canSaveAIProfiles: Bool {
+        isProUser
     }
 
-    func incrementFreeAdjustmentsUsed() {
-        if !isProUser {
-            freeAdjustmentsUsed += 1
-        }
+    var canUseCloudSync: Bool {
+        isProUser
     }
 
     func loadProducts() async {
@@ -156,7 +139,7 @@ final class SubscriptionManager {
 
     func purchase(_ product: Product) async -> Result<Bool, PurchaseError> {
         print("[SubscriptionManager] Attempting purchase of: \(product.id)")
-        
+
         do {
             let result = try await product.purchase()
             switch result {
@@ -289,7 +272,7 @@ final class SubscriptionManager {
             switch result {
             case .verified(let transaction):
                 print("[SubscriptionManager] Found entitlement: \(transaction.productID), expires: \(transaction.expirationDate ?? .distantFuture)")
-                
+
                 if transaction.productID == lifetimeProductID {
                     isLifetimeUser = true
                     isProUser = true

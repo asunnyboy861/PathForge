@@ -5,16 +5,24 @@ import Charts
 struct StatsView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = StatsViewModel()
+    @State private var subscriptionManager = SubscriptionManager()
+    @State private var showPaywall = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    summaryCards
+                    if subscriptionManager.canAccessDetailedStats {
+                        summaryCards
 
-                    weeklyChart
+                        weeklyChart
 
-                    pathBreakdown
+                        pathBreakdown
+                    } else {
+                        basicStatsPreview
+
+                        proUpgradeCard
+                    }
                 }
                 .padding()
             }
@@ -24,7 +32,63 @@ struct StatsView: View {
             .onAppear {
                 viewModel.fetchStats(modelContext: modelContext)
             }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView(subscriptionManager: subscriptionManager)
+            }
         }
+    }
+
+    private var basicStatsPreview: some View {
+        VStack(spacing: 16) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                StatCardView(title: "Study Time", value: "\(viewModel.totalStudyMinutes / 60)h", icon: "clock", color: .forgeBlue)
+                StatCardView(title: "Tasks Done", value: "\(viewModel.completedTasks)", icon: "checkmark.circle", color: .pathGreen)
+            }
+
+            VStack(spacing: 8) {
+                Image(systemName: "lock.fill")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+
+                Text("Detailed statistics are a Pro feature")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding()
+        }
+    }
+
+    private var proUpgradeCard: some View {
+        Button {
+            showPaywall = true
+        } label: {
+            VStack(spacing: 12) {
+                Image(systemName: "crown.fill")
+                    .font(.title)
+                    .foregroundStyle(.yellow)
+
+                Text("Unlock Detailed Statistics")
+                    .font(.headline)
+
+                Text("Charts, trends, completion rates, and more")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Text("Upgrade to Pro")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 8)
+                    .background(Color.forgeBlue)
+                    .clipShape(Capsule())
+            }
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
     }
 
     private var summaryCards: some View {

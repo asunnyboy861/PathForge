@@ -5,9 +5,7 @@ struct PathDetailView: View {
     let studyPath: StudyPath
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel: PathDetailViewModel?
-    @State private var subscriptionManager = SubscriptionManager()
     @State private var showAdjustSheet = false
-    @State private var showPaywall = false
 
     var body: some View {
         ScrollView {
@@ -46,9 +44,6 @@ struct PathDetailView: View {
         }
         .sheet(isPresented: $showAdjustSheet) {
             adjustPathSheet
-        }
-        .sheet(isPresented: $showPaywall) {
-            PaywallView(subscriptionManager: subscriptionManager)
         }
     }
 
@@ -120,24 +115,24 @@ struct PathDetailView: View {
     }
 
     private var adjustPathButton: some View {
-        Button {
-            if subscriptionManager.canAdjustPath {
-                showAdjustSheet = true
-            } else {
-                showPaywall = true
-            }
+        let config = AIConfiguration.loadFromStorage()
+        let hasKey = !config.apiKey.isEmpty
+
+        return Button {
+            showAdjustSheet = true
         } label: {
             HStack {
-                Image(systemName: "arrow.triangle.2.circlepath")
-                Text(subscriptionManager.canAdjustPath ? "Adjust Path with AI" : "Adjust Path (Pro)")
+                Image(systemName: hasKey ? "arrow.triangle.2.circlepath" : "key")
+                Text(hasKey ? "Adjust Path with AI" : "Adjust Path (Add API Key in Settings)")
             }
             .font(.headline)
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding()
-            .background(Color.forgeBlue)
+            .background(hasKey ? Color.forgeBlue : Color.gray)
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
+        .disabled(!hasKey)
     }
 
     private var adjustPathSheet: some View {
@@ -165,7 +160,6 @@ struct PathDetailView: View {
                     Task {
                         await viewModel?.adjustPath(studyPath, modelContext: modelContext)
                         if viewModel?.errorMessage == nil {
-                            subscriptionManager.incrementFreeAdjustmentsUsed()
                             showAdjustSheet = false
                         }
                     }

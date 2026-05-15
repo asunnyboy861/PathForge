@@ -14,6 +14,7 @@ final class StudyPath {
     var createdAt: Date
     var updatedAt: Date
     var isActive: Bool
+    var isDemo: Bool
     @Relationship(deleteRule: .cascade, inverse: \Milestone.studyPath)
     var milestones: [Milestone] = []
     @Relationship(deleteRule: .cascade, inverse: \LearningResource.studyPath)
@@ -40,6 +41,7 @@ final class StudyPath {
         self.createdAt = Date()
         self.updatedAt = Date()
         self.isActive = true
+        self.isDemo = false
     }
 
     var overallProgress: Double {

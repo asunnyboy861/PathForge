@@ -10,6 +10,10 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    if DemoDataService.isDemoMode {
+                        demoModeBanner
+                    }
+
                     greetingSection
 
                     todayTasksSection
@@ -105,19 +109,48 @@ struct HomeView: View {
                 .font(.headline)
 
             if viewModel.studyPaths.isEmpty {
-                Button {
-                    showCreatePath = true
-                } label: {
-                    HStack {
-                        Image(systemName: "plus.circle")
-                        Text("Create New Path")
+                VStack(spacing: 12) {
+                    Image(systemName: "map")
+                        .font(.system(size: 36))
+                        .foregroundStyle(.forgeBlue)
+
+                    if DemoDataService.isDemoMode {
+                        Text("Configure your API key to get started")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        NavigationLink {
+                            SettingsView()
+                        } label: {
+                            HStack {
+                                Image(systemName: "key")
+                                Text("Go to Settings")
+                            }
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                            .background(Color.forgeBlue)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                    } else {
+                        Button {
+                            showCreatePath = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "plus.circle")
+                                Text("Create New Path")
+                            }
+                            .font(.headline)
+                            .foregroundStyle(.forgeBlue)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(.forgeBlue.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                        }
                     }
-                    .font(.headline)
-                    .foregroundStyle(.forgeBlue)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(.forgeBlue.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
                 }
+                .padding()
+                .frame(maxWidth: .infinity)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
@@ -200,5 +233,40 @@ struct HomeView: View {
         if hour < 12 { return "Good Morning" }
         else if hour < 17 { return "Good Afternoon" }
         else { return "Good Evening" }
+    }
+
+    private var demoModeBanner: some View {
+        NavigationLink {
+            SettingsView()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "info.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.forgeBlue)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Demo Mode")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+                    Text("Add your API key in Settings to unlock AI features")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .background(Color.forgeBlue.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.forgeBlue.opacity(0.2), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }

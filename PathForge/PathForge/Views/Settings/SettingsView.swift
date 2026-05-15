@@ -1,9 +1,11 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @Environment(\.modelContext) private var modelContext
     @State private var viewModel = SettingsViewModel()
     @State private var subscriptionManager = SubscriptionManager()
     @State private var showPaywall = false
+    @State private var hadNoAPIKey = false
 
     private var reminderDate: Binding<Date> {
         Binding(
@@ -40,6 +42,12 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .onAppear {
                 viewModel.loadSavedProfiles()
+                hadNoAPIKey = viewModel.apiKey.isEmpty
+            }
+            .onChange(of: viewModel.apiKey) { oldValue, newValue in
+                if oldValue.isEmpty && !newValue.isEmpty {
+                    DemoDataService.removeDemoData(modelContext: modelContext)
+                }
             }
             .sheet(isPresented: $viewModel.showProfileSheet) {
                 saveProfileSheet
@@ -367,10 +375,10 @@ struct SettingsView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Free Plan")
+                    Text("Free Plan — AI features included with your API key")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Text("\(subscriptionManager.remainingFreePaths) of \(subscriptionManager.maxFreePaths) paths remaining")
+                    Text("Pro unlocks: Statistics, Export, Widgets, Profiles, iCloud Sync")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
